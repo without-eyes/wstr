@@ -11,4 +11,6 @@
 
 unsigned short calculate_checksum(void *buffer, int length);
 
+void wstr(const char *destinationHost);
+
 #endif //WSTR_H
