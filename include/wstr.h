@@ -9,4 +9,6 @@
 #ifndef WSTR_H
 #define WSTR_H
 
+unsigned short calculate_checksum(void *buffer, int length);
+
 #endif //WSTR_H
