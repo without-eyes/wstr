@@ -12,6 +12,16 @@
 #include <netinet/ip_icmp.h>
 
 /**
+    * Resolves the given hostname to an IP address.
+    *
+    * @param[in] destinationHost The hostname to resolve.
+    *
+    * @return Returns a sockaddr_in structure containing
+    * the resolved IP address.
+*/
+struct sockaddr_in resolve_host(const char *destinationHost);
+
+/**
     * Computes the Internet checksum for a given buffer.
     *
     * @param[in] buffer The pointer to data buffer.

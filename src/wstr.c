@@ -20,6 +20,17 @@
 #define MAX_HOPS 30
 #define PACKET_SIZE 64
 
+struct sockaddr_in resolve_host(const char *destinationHost) {
+    const struct hostent *host = gethostbyname(destinationHost);
+
+    struct sockaddr_in destinationAddress;
+    destinationAddress.sin_family = AF_INET;
+    destinationAddress.sin_port = 0;
+    destinationAddress.sin_addr = *(struct in_addr *)host->h_addr_list[0];
+
+    return destinationAddress;
+}
+
 unsigned short calculate_checksum(void *buffer, int length) {
     unsigned short *wordPointer = buffer;
     unsigned int sum = 0;
@@ -48,13 +59,9 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
 }
 
 void wstr(const char *destinationHost) {
-    const struct hostent *host = gethostbyname(destinationHost);
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
-    struct sockaddr_in destinationAddress;
-    destinationAddress.sin_family = AF_INET;
-    destinationAddress.sin_port = 0;
-    destinationAddress.sin_addr = *(struct in_addr *)host->h_addr_list[0];
+    struct sockaddr_in destinationAddress = resolve_host(destinationHost);
 
     struct icmp icmpHeader;
     for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
