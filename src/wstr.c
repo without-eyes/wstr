@@ -17,6 +17,10 @@
 #include <netinet/ip_icmp.h>
 #include <arpa/inet.h>
 
+#define WORD_LENGTH_IN_BYTES 16
+#define MAX_HOPS 30
+#define PACKET_SIZE 64
+
 unsigned short calculate_checksum(void *buffer, int length) {
     unsigned short *wordPointer = buffer;
     unsigned int sum = 0;
@@ -29,8 +33,8 @@ unsigned short calculate_checksum(void *buffer, int length) {
         sum += *(unsigned char *)wordPointer;
     }
 
-    sum = (sum >> 16) + (sum & 0xFFFF);
-    sum += (sum >> 16);
+    sum = (sum >> WORD_LENGTH_IN_BYTES) + (sum & 0xFFFF);
+    sum += (sum >> WORD_LENGTH_IN_BYTES);
 
     return ~sum;
 }
@@ -45,7 +49,7 @@ void wstr(const char *destinationHost) {
     destinationAddress.sin_addr = *(struct in_addr *)host->h_addr_list[0];
 
     struct icmp icmpHeader;
-    for (int timeToLive = 1; timeToLive <= 30; timeToLive++) {
+    for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
         memset(&icmpHeader, 0, sizeof(icmpHeader));
         icmpHeader.icmp_type = ICMP_ECHO;
         icmpHeader.icmp_code = 0;
@@ -56,7 +60,7 @@ void wstr(const char *destinationHost) {
         setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
         sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
 
-        char packet[64];
+        char packet[PACKET_SIZE];
         struct sockaddr_in replyAddress;
         socklen_t replyAddressLength = sizeof(replyAddress);
         recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
