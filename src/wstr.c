@@ -58,6 +58,16 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     icmpHeader->icmp_cksum = calculate_checksum(&*icmpHeader, sizeof(*icmpHeader));
 }
 
+void print_hop_info(const int timeToLive, const struct sockaddr_in *replyAddress, const char *packet) {
+    const struct ip *ipHeader = (struct ip *)packet;
+    if (ipHeader->ip_p == IPPROTO_ICMP) {
+        const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
+        if (icmpReply->icmp_type == ICMP_ECHOREPLY || icmpReply->icmp_type == ICMP_TIME_EXCEEDED) {
+            printf("%d %s\n", timeToLive, inet_ntoa(replyAddress->sin_addr));
+        }
+    }
+}
+
 void wstr(const char *destinationHost) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
@@ -75,13 +85,7 @@ void wstr(const char *destinationHost) {
         socklen_t replyAddressLength = sizeof(replyAddress);
         recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
 
-        const struct ip* ipHeader = (struct ip*)packet;
-        if (ipHeader->ip_p == IPPROTO_ICMP) {
-            const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
-            if (icmpReply->icmp_type == ICMP_ECHOREPLY || icmpReply->icmp_type == ICMP_TIME_EXCEEDED) {
-                printf("%d %s\n", timeToLive, inet_ntoa(replyAddress.sin_addr));
-            }
-        }
+        print_hop_info(timeToLive, &replyAddress, packet);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
             break;

@@ -41,6 +41,20 @@ unsigned short calculate_checksum(void *buffer, int length);
 void set_icmp_echo_fields(struct icmp* icmpHeader, int timeToLive);
 
 /**
+    * Prints the hop information during a traceroute operation.
+    *
+    * @param[in] timeToLive The current TTL value used in the
+    * ICMP request.
+    * @param[in] replyAddress The address of the replying host.
+    * @param[in] packet The packet received from the reply,
+    * containing the ICMP response data.
+    *
+    * @note This function requires raw socket privileges, so
+    * it need to be executed with root permissions.
+*/
+void print_hop_info(int timeToLive, const struct sockaddr_in *replyAddress, const char *packet);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] destinationHost The destination host's domain
