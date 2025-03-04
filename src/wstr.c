@@ -14,7 +14,6 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
 #include <arpa/inet.h>
 
 #define WORD_LENGTH_IN_BYTES 16
@@ -39,6 +38,15 @@ unsigned short calculate_checksum(void *buffer, int length) {
     return ~sum;
 }
 
+void setIcmpEchoFields(struct icmp* icmpHeader, const int timeToLive) {
+    memset(icmpHeader, 0, sizeof(*icmpHeader));
+    icmpHeader->icmp_type = ICMP_ECHO;
+    icmpHeader->icmp_code = 0;
+    icmpHeader->icmp_id = getpid();
+    icmpHeader->icmp_seq = timeToLive;
+    icmpHeader->icmp_cksum = calculate_checksum(&*icmpHeader, sizeof(*icmpHeader));
+}
+
 void wstr(const char *destinationHost) {
     const struct hostent *host = gethostbyname(destinationHost);
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
@@ -50,12 +58,7 @@ void wstr(const char *destinationHost) {
 
     struct icmp icmpHeader;
     for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
-        memset(&icmpHeader, 0, sizeof(icmpHeader));
-        icmpHeader.icmp_type = ICMP_ECHO;
-        icmpHeader.icmp_code = 0;
-        icmpHeader.icmp_id = getpid();
-        icmpHeader.icmp_seq = timeToLive;
-        icmpHeader.icmp_cksum = calculate_checksum(&icmpHeader, sizeof(icmpHeader));
+        setIcmpEchoFields(&icmpHeader, timeToLive);
 
         setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
         sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));

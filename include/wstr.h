@@ -9,6 +9,8 @@
 #ifndef WSTR_H
 #define WSTR_H
 
+#include <netinet/ip_icmp.h>
+
 /**
     * Computes the Internet checksum for a given buffer.
     *
@@ -18,6 +20,15 @@
     * @return Returns computed cheksum.
 */
 unsigned short calculate_checksum(void *buffer, int length);
+
+/**
+    * Initializes an ICMP Echo Request packet.
+    *
+    * @param[in] icmpHeader Pointer to the ICMP header structure
+    * to initialize.
+    * @param[in] timeToLive The time to live of icmp packet.
+*/
+void setIcmpEchoFields(struct icmp* icmpHeader, int timeToLive);
 
 /**
     * Performs a traceroute to the specified destination host.
