@@ -38,7 +38,7 @@ unsigned short calculate_checksum(void *buffer, int length) {
     return ~sum;
 }
 
-void setIcmpEchoFields(struct icmp* icmpHeader, const int timeToLive) {
+void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     memset(icmpHeader, 0, sizeof(*icmpHeader));
     icmpHeader->icmp_type = ICMP_ECHO;
     icmpHeader->icmp_code = 0;
@@ -58,7 +58,7 @@ void wstr(const char *destinationHost) {
 
     struct icmp icmpHeader;
     for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
-        setIcmpEchoFields(&icmpHeader, timeToLive);
+        set_icmp_echo_fields(&icmpHeader, timeToLive);
 
         setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
         sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));

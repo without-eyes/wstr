@@ -28,7 +28,7 @@ unsigned short calculate_checksum(void *buffer, int length);
     * to initialize.
     * @param[in] timeToLive The time to live of icmp packet.
 */
-void setIcmpEchoFields(struct icmp* icmpHeader, int timeToLive);
+void set_icmp_echo_fields(struct icmp* icmpHeader, int timeToLive);
 
 /**
     * Performs a traceroute to the specified destination host.
