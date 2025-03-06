@@ -23,12 +23,14 @@
 #define DOMAIN_NAME_SIZE 128
 
 struct sockaddr_in resolve_host(const char *destinationHost) {
-    const struct hostent *host = gethostbyname(destinationHost);
+    struct addrinfo hints = {0}, *res;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
 
-    struct sockaddr_in destinationAddress;
-    destinationAddress.sin_family = AF_INET;
-    destinationAddress.sin_port = 0;
-    destinationAddress.sin_addr = *(struct in_addr *)host->h_addr_list[0];
+    getaddrinfo(destinationHost, NULL, &hints, &res);
+
+    const struct sockaddr_in destinationAddress = *(struct sockaddr_in *)res->ai_addr;
+    freeaddrinfo(res);
 
     return destinationAddress;
 }
