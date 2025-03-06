@@ -20,6 +20,7 @@
 #define WORD_LENGTH_IN_BYTES 16
 #define MAX_HOPS 30
 #define PACKET_SIZE 64
+#define DOMAIN_NAME_SIZE 128
 
 struct sockaddr_in resolve_host(const char *destinationHost) {
     const struct hostent *host = gethostbyname(destinationHost);
@@ -64,7 +65,13 @@ void print_hop_info(const int timeToLive, const double roundTripTime, const stru
     if (ipHeader->ip_p == IPPROTO_ICMP) {
         const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
         if (icmpReply->icmp_type == ICMP_ECHOREPLY || icmpReply->icmp_type == ICMP_TIME_EXCEEDED) {
-            printf("%d %.3fms %s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
+            char domainName[DOMAIN_NAME_SIZE];
+            const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
+            if (result == 0) {
+                printf("%d %.3fms %s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr), domainName);
+            } else {
+                printf("%d %.3fms %s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
+            }
         }
     }
 }
