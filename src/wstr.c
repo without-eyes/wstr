@@ -62,17 +62,21 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
 
 void print_hop_info(const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet) {
     const struct ip *ipHeader = (struct ip *)packet;
-    if (ipHeader->ip_p == IPPROTO_ICMP) {
-        const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
-        if (icmpReply->icmp_type == ICMP_ECHOREPLY || icmpReply->icmp_type == ICMP_TIME_EXCEEDED) {
-            char domainName[DOMAIN_NAME_SIZE];
-            const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
-            if (result == 0) {
-                printf("%d %.3fms %s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr), domainName);
-            } else {
-                printf("%d %.3fms %s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
-            }
-        }
+    if (ipHeader->ip_p != IPPROTO_ICMP) {
+        return;
+    }
+
+    const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
+    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
+        return;
+    }
+
+    char domainName[DOMAIN_NAME_SIZE];
+    const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
+    if (result == 0) {
+        printf("%d %.3fms %s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr), domainName);
+    } else {
+        printf("%d %.3fms %s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
     }
 }
 
