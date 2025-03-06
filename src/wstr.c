@@ -12,6 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -58,12 +59,12 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     icmpHeader->icmp_cksum = calculate_checksum(&*icmpHeader, sizeof(*icmpHeader));
 }
 
-void print_hop_info(const int timeToLive, const struct sockaddr_in *replyAddress, const char *packet) {
+void print_hop_info(const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet) {
     const struct ip *ipHeader = (struct ip *)packet;
     if (ipHeader->ip_p == IPPROTO_ICMP) {
         const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
         if (icmpReply->icmp_type == ICMP_ECHOREPLY || icmpReply->icmp_type == ICMP_TIME_EXCEEDED) {
-            printf("%d %s\n", timeToLive, inet_ntoa(replyAddress->sin_addr));
+            printf("%d %.3fms %s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
         }
     }
 }
@@ -77,6 +78,9 @@ void wstr(const char *destinationHost) {
     for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
         set_icmp_echo_fields(&icmpHeader, timeToLive);
 
+        struct timespec sendingTime;
+        clock_gettime(CLOCK_MONOTONIC, &sendingTime);
+
         setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
         sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
 
@@ -85,7 +89,12 @@ void wstr(const char *destinationHost) {
         socklen_t replyAddressLength = sizeof(replyAddress);
         recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
 
-        print_hop_info(timeToLive, &replyAddress, packet);
+        struct timespec receivingTime;
+        clock_gettime(CLOCK_MONOTONIC, &receivingTime);
+        const double roundTripTime = (receivingTime.tv_sec - sendingTime.tv_sec) * 1000.0 +
+                                    (receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
+
+        print_hop_info(timeToLive, roundTripTime, &replyAddress, packet);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
             break;
