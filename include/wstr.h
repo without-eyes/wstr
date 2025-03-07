@@ -12,6 +12,14 @@
 #include <netinet/ip_icmp.h>
 
 /**
+ * Handles errors returned by the getaddrinfo function.
+ *
+ * @param[in] errorValue The error code returned by getaddrinfo
+ * function.
+ */
+void handle_getaddrinfo_errors(int errorValue);
+
+/**
     * Resolves the given hostname to an IP address.
     *
     * @param[in] destinationHost The hostname to resolve.

@@ -12,6 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <stdlib.h>
 #include <time.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
@@ -22,12 +23,33 @@
 #define PACKET_SIZE 64
 #define DOMAIN_NAME_SIZE 128
 
+void handle_getaddrinfo_errors(const int errorValue) {
+    switch (errorValue) {
+        case EAI_BADFLAGS:  perror("Invalid value for `ai_flags' field"); break;
+        case EAI_NONAME:    perror("NAME or SERVICE is unknown."); break;
+        case EAI_AGAIN:     perror("Temporary failure in name resolution."); break;
+        case EAI_FAIL:      perror("Non-recoverable failure in name res."); break;
+        case EAI_FAMILY:    perror("`ai_family' not supported."); break;
+        case EAI_SOCKTYPE:  perror("`ai_socktype' not supported."); break;
+        case EAI_SERVICE:   perror("SERVICE not supported for `ai_socktype'."); break;
+        case EAI_MEMORY:    perror("Memory allocation failure."); break;
+        case EAI_SYSTEM:    perror("System error returned in `errno'."); break;
+        case EAI_OVERFLOW:  perror("Argument buffer overflow."); break;
+        default:            __builtin_unreachable();
+    }
+}
+
 struct sockaddr_in resolve_host(const char *destinationHost) {
     struct addrinfo hints = {0}, *res;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    getaddrinfo(destinationHost, NULL, &hints, &res);
+    const int result = getaddrinfo(destinationHost, NULL, &hints, &res);
+    if (result != 0) {
+        freeaddrinfo(res);
+        handle_getaddrinfo_errors(result);
+        exit(0);
+    }
 
     const struct sockaddr_in destinationAddress = *(struct sockaddr_in *)res->ai_addr;
     freeaddrinfo(res);
