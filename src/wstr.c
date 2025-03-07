@@ -82,6 +82,11 @@ void print_hop_info(const int timeToLive, const double roundTripTime, const stru
     }
 }
 
+double calculate_round_trip_time(const struct timespec sendingTime, const struct timespec receivingTime) {
+    return (double)(receivingTime.tv_sec - sendingTime.tv_sec) * 1000.0 +
+            (double)(receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
+}
+
 void wstr(const char *destinationHost) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
@@ -102,9 +107,7 @@ void wstr(const char *destinationHost) {
         recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
-        const double roundTripTime = (receivingTime.tv_sec - sendingTime.tv_sec) * 1000.0 +
-                                    (receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
-        print_hop_info(timeToLive, roundTripTime, &replyAddress, packet);
+        print_hop_info(timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress, packet);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
             break;

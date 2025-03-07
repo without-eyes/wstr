@@ -41,6 +41,19 @@ unsigned short calculate_checksum(void *buffer, int length);
 void set_icmp_echo_fields(struct icmp* icmpHeader, int timeToLive);
 
 /**
+    * Calculates the round trip time (RTT) between sending and
+    * receiving an ICMP Echo Request packet.
+    *
+    * @param[in] sendingTime The timestamp when the ICMP packet
+    * was sent.
+    * @param[in] receivingTime The timestamp when the ICMP Echo
+    * Reply was received.
+    *
+    * @return The round-trip time in milliseconds.
+*/
+double calculate_round_trip_time(struct timespec sendingTime, struct timespec receivingTime);
+
+/**
     * Prints the hop information during a traceroute operation.
     *
     * @param[in] timeToLive The current TTL value used in the
