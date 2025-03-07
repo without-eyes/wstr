@@ -48,7 +48,7 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
     if (result != 0) {
         freeaddrinfo(res);
         handle_getaddrinfo_errors(result);
-        exit(0);
+        exit(1);
     }
 
     const struct sockaddr_in destinationAddress = *(struct sockaddr_in *)res->ai_addr;
