@@ -89,24 +89,21 @@ void wstr(const char *destinationHost) {
 
     struct icmp icmpHeader;
     for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
+        struct timespec sendingTime, receivingTime;
+        struct sockaddr_in replyAddress;
+        char packet[PACKET_SIZE];
+
         set_icmp_echo_fields(&icmpHeader, timeToLive);
-
-        struct timespec sendingTime;
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
-
         setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
         sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
 
-        char packet[PACKET_SIZE];
-        struct sockaddr_in replyAddress;
         socklen_t replyAddressLength = sizeof(replyAddress);
         recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
-
-        struct timespec receivingTime;
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
+
         const double roundTripTime = (receivingTime.tv_sec - sendingTime.tv_sec) * 1000.0 +
                                     (receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
-
         print_hop_info(timeToLive, roundTripTime, &replyAddress, packet);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
