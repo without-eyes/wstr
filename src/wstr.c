@@ -111,6 +111,10 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
 
 void wstr(const char *destinationHost) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+    if (socketFileDescriptor == -1) {
+        perror("Socket creation failed!");
+        exit(1);
+    }
 
     struct sockaddr_in destinationAddress = resolve_host(destinationHost);
 
@@ -122,11 +126,26 @@ void wstr(const char *destinationHost) {
 
         set_icmp_echo_fields(&icmpHeader, timeToLive);
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
-        setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
-        sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
+
+        const int result = setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
+        if (result == -1) {
+            perror("Function setsockopt failed!");
+            exit(1);
+        }
+
+        const ssize_t bytesSent = sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
+        if (bytesSent == -1) {
+            perror("Function sendto failed!");
+            exit(1);
+        }
 
         socklen_t replyAddressLength = sizeof(replyAddress);
-        recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
+        const ssize_t bytesReceived = recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
+        if (bytesReceived == -1) {
+            perror("Function recvfrom failed!");
+            exit(1);
+        }
+
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
         print_hop_info(timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress, packet);
