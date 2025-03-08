@@ -25,16 +25,16 @@
 
 void handle_getaddrinfo_errors(const int errorValue) {
     switch (errorValue) {
-        case EAI_BADFLAGS:  perror("Invalid value for `ai_flags' field"); break;
-        case EAI_NONAME:    perror("NAME or SERVICE is unknown."); break;
-        case EAI_AGAIN:     perror("Temporary failure in name resolution."); break;
-        case EAI_FAIL:      perror("Non-recoverable failure in name res."); break;
-        case EAI_FAMILY:    perror("`ai_family' not supported."); break;
-        case EAI_SOCKTYPE:  perror("`ai_socktype' not supported."); break;
-        case EAI_SERVICE:   perror("SERVICE not supported for `ai_socktype'."); break;
-        case EAI_MEMORY:    perror("Memory allocation failure."); break;
-        case EAI_SYSTEM:    perror("System error returned in `errno'."); break;
-        case EAI_OVERFLOW:  perror("Argument buffer overflow."); break;
+        case EAI_BADFLAGS:  printf("Invalid value for `ai_flags' field"); break;
+        case EAI_NONAME:    printf("NAME or SERVICE is unknown."); break;
+        case EAI_AGAIN:     printf("Temporary failure in name resolution."); break;
+        case EAI_FAIL:      printf("Non-recoverable failure in name res."); break;
+        case EAI_FAMILY:    printf("`ai_family' not supported."); break;
+        case EAI_SOCKTYPE:  printf("`ai_socktype' not supported."); break;
+        case EAI_SERVICE:   printf("SERVICE not supported for `ai_socktype'."); break;
+        case EAI_MEMORY:    printf("Memory allocation failure."); break;
+        case EAI_SYSTEM:    printf("System error returned in `errno'."); break;
+        case EAI_OVERFLOW:  printf("Argument buffer overflow."); break;
         default:            __builtin_unreachable();
     }
 }
