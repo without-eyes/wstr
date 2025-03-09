@@ -81,7 +81,7 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     icmpHeader->icmp_code = 0;
     icmpHeader->icmp_id = getpid();
     icmpHeader->icmp_seq = timeToLive;
-    icmpHeader->icmp_cksum = calculate_checksum(&*icmpHeader, sizeof(*icmpHeader));
+    icmpHeader->icmp_cksum = calculate_checksum(icmpHeader, sizeof(*icmpHeader));
 }
 
 void print_hop_info(const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet) {
@@ -127,27 +127,23 @@ void wstr(const char *interface, const char *destinationHost) {
         set_icmp_echo_fields(&icmpHeader, timeToLive);
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
-        const int ttlResult = setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
-        if (ttlResult == -1) {
+        if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
             perror("Function setsockopt failed while setting TTL!");
             exit(1);
         }
 
-        const int interfaceResult = setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, interface, sizeof(interface));
-        if (interfaceResult == -1) {
+        if (setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, interface, sizeof(interface)) == -1) {
             perror("Function setsockopt failed while binding socket to interface!");
             exit(1);
         }
 
-        const ssize_t bytesSent = sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
-        if (bytesSent == -1) {
+        if (sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress)) == -1) {
             perror("Function sendto failed!");
             exit(1);
         }
 
         socklen_t replyAddressLength = sizeof(replyAddress);
-        const ssize_t bytesReceived = recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength);
-        if (bytesReceived == -1) {
+        if (recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength) == -1) {
             perror("Function recvfrom failed!");
             exit(1);
         }
