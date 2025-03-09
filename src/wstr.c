@@ -109,7 +109,7 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
             (double)(receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
 }
 
-void wstr(const char *destinationHost) {
+void wstr(const char *interface, const char *destinationHost) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
         perror("Socket creation failed!");
@@ -127,9 +127,15 @@ void wstr(const char *destinationHost) {
         set_icmp_echo_fields(&icmpHeader, timeToLive);
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
-        const int result = setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
-        if (result == -1) {
-            perror("Function setsockopt failed!");
+        const int ttlResult = setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive));
+        if (ttlResult == -1) {
+            perror("Function setsockopt failed while setting TTL!");
+            exit(1);
+        }
+
+        const int interfaceResult = setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, interface, sizeof(interface));
+        if (interfaceResult == -1) {
+            perror("Function setsockopt failed while binding socket to interface!");
             exit(1);
         }
 

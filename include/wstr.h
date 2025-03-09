@@ -79,12 +79,14 @@ void print_hop_info(int timeToLive, double roundTripTime, const struct sockaddr_
 /**
     * Performs a traceroute to the specified destination host.
     *
+    * @param[in] interface The name of the network interface
+    * to bind the socket to (e.g., "enp4s0").
     * @param[in] destinationHost The destination host's domain
     * name or IP address.
     *
     * @note This function requires raw socket privileges, so
     * it need to be executed with root permissions.
 */
-void wstr(const char *destinationHost);
+void wstr(const char *interface, const char *destinationHost);
 
 #endif //WSTR_H
