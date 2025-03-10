@@ -28,6 +28,7 @@ struct Options parse_arguments(const int argc, char *argv[]) {
     int currentOption;
     struct Options options = {
         .destinationHost = NULL,
+        .interface = NULL,
         .fqdnFlag = 0
     };
     const struct option longOptions[] = {
