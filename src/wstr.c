@@ -55,7 +55,11 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             break;
 
         case 'h': // help
-            printf("help\n");
+            printf("Usage: sudo wstr [-d] [-i name] [-t number] destination\n");
+            printf("  -d, --domain      Turn on displaying FQDN\n");
+            printf("  -i, --interface   Set network interface\n");
+            printf("  -t, --ttl         Set TTL for network packets\n");
+            printf("  -h, --help        Show this help message\n");
             exit(0);
 
         default:
