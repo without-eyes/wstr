@@ -8,6 +8,7 @@
 #include "../include/wstr.h"
 
 int main(int argc, char *argv[]) {
-    wstr(argv[1], argv[2]);
+    const struct Options options = parse_arguments(argc, argv);
+    wstr(argv[1], &options);
     return 0;
 }

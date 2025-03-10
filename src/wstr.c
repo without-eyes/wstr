@@ -14,6 +14,7 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <time.h>
+#include <getopt.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -22,6 +23,30 @@
 #define MAX_HOPS 30
 #define PACKET_SIZE 64
 #define DOMAIN_NAME_SIZE 128
+
+struct Options parse_arguments(const int argc, char *argv[]) {
+    int currentOption;
+    struct Options options;
+    const struct option longOptions[] = {
+        {"help", no_argument, NULL, 'h'},
+        {0, 0, 0, 0}
+    };
+
+
+    while ((currentOption = getopt_long(argc, argv, "hdi:n:", longOptions, NULL)) != -1) {
+        switch (currentOption) {
+        case 'h': // help
+            printf("help\n");
+            exit(0);
+
+        default:
+            fprintf(stderr, "Invalid option. Use -h for help.\n");
+            exit(-1);
+        }
+    }
+
+    return options;
+}
 
 void handle_getaddrinfo_errors(const int errorValue) {
     switch (errorValue) {
@@ -109,7 +134,7 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
             (double)(receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
 }
 
-void wstr(const char *interface, const char *destinationHost) {
+void wstr(const char *destinationHost, const struct Options* options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
         perror("Socket creation failed!");
@@ -132,6 +157,7 @@ void wstr(const char *interface, const char *destinationHost) {
             exit(1);
         }
 
+        const char interface[] = "enp4s0";
         if (setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, interface, sizeof(interface)) == -1) {
             perror("Function setsockopt failed while binding socket to interface!");
             exit(1);
