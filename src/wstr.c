@@ -26,14 +26,16 @@
 
 struct Options parse_arguments(const int argc, char *argv[]) {
     int currentOption;
-    struct Options options;
+    struct Options options = {
+        .destinationHost = NULL
+    };
     const struct option longOptions[] = {
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
 
-    while ((currentOption = getopt_long(argc, argv, "hdi:n:", longOptions, NULL)) != -1) {
+    while ((currentOption = getopt_long(argc, argv, "h", longOptions, NULL)) != -1) {
         switch (currentOption) {
         case 'h': // help
             printf("help\n");
@@ -44,6 +46,12 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             exit(-1);
         }
     }
+
+    if (optind == argc) {
+        fprintf(stderr, "Destination host is required!\n");
+        exit(-1);
+    }
+    options.destinationHost = argv[optind];
 
     return options;
 }
@@ -134,14 +142,14 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
             (double)(receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
 }
 
-void wstr(const char *destinationHost, const struct Options* options) {
+void wstr(const struct Options* options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
         perror("Socket creation failed!");
         exit(1);
     }
 
-    struct sockaddr_in destinationAddress = resolve_host(destinationHost);
+    struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
 
     struct icmp icmpHeader;
     for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {

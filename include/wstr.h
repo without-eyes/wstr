@@ -12,7 +12,7 @@
 #include <netinet/ip_icmp.h>
 
 struct Options {
-
+    char* destinationHost;
 };
 
 /**
@@ -103,14 +103,12 @@ void print_hop_info(int timeToLive, double roundTripTime, const struct sockaddr_
 /**
     * Performs a traceroute to the specified destination host.
     *
-    * @param[in] destinationHost The destination host's domain
-    * name or IP address.
     * @param[in] options The options of wstr passed as arguments
     * to program.
     *
     * @note This function requires raw socket privileges, so
     * it need to be executed with root permissions.
 */
-void wstr(const char *destinationHost, const struct Options* options);
+void wstr(const struct Options* options);
 
 #endif //WSTR_H

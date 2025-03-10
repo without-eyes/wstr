@@ -9,6 +9,6 @@
 
 int main(int argc, char *argv[]) {
     const struct Options options = parse_arguments(argc, argv);
-    wstr(argv[1], &options);
+    wstr(&options);
     return 0;
 }
