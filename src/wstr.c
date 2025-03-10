@@ -27,17 +27,23 @@
 struct Options parse_arguments(const int argc, char *argv[]) {
     int currentOption;
     struct Options options = {
-        .destinationHost = NULL
+        .destinationHost = NULL,
+        .fqdnFlag = 0
     };
     const struct option longOptions[] = {
+        {"domain", no_argument, NULL, 'd'},
         {"interface", required_argument, NULL, 'i'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
 
-    while ((currentOption = getopt_long(argc, argv, "hi:", longOptions, NULL)) != -1) {
+    while ((currentOption = getopt_long(argc, argv, "di:h", longOptions, NULL)) != -1) {
         switch (currentOption) {
+        case 'd': // FQDN
+            options.fqdnFlag = 1;
+            break;
+
         case 'i': // interface
             options.interface = optarg;
             break;
@@ -122,7 +128,7 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     icmpHeader->icmp_cksum = calculate_checksum(icmpHeader, sizeof(*icmpHeader));
 }
 
-void print_hop_info(const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet) {
+void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet) {
     const struct ip *ipHeader = (struct ip *)packet;
     if (ipHeader->ip_p != IPPROTO_ICMP) {
         return;
@@ -135,7 +141,7 @@ void print_hop_info(const int timeToLive, const double roundTripTime, const stru
 
     char domainName[DOMAIN_NAME_SIZE];
     const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
-    if (result == 0) {
+    if (options->fqdnFlag == 1 && result == 0) {
         printf("%2d  %7.3lfms   %-15s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr), domainName);
     } else {
         printf("%2d  %7.3lfms   %-15s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
@@ -188,7 +194,7 @@ void wstr(const struct Options* options) {
 
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
-        print_hop_info(timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress, packet);
+        print_hop_info(options, timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress, packet);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
             break;

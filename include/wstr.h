@@ -14,6 +14,7 @@
 struct Options {
     char* destinationHost;
     char* interface;
+    unsigned char fqdnFlag;
 };
 
 /**
@@ -90,6 +91,8 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
 /**
     * Prints the hop information during a traceroute operation.
     *
+    * @param[in] options The options of wstr passed as arguments
+    * to program.
     * @param[in] timeToLive The current TTL value used in the
     * ICMP request.
     * @param [in]roundTripTime The time taken for hope to respond.
@@ -100,7 +103,7 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
     * @note This function requires raw socket privileges, so
     * it need to be executed with root permissions.
 */
-void print_hop_info(int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet);
+void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet);
 
 /**
     * Performs a traceroute to the specified destination host.
