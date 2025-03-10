@@ -13,6 +13,7 @@
 
 struct Options {
     char* destinationHost;
+    char* interface;
 };
 
 /**
@@ -25,6 +26,7 @@ struct Options {
  *
  * This function updates the program's global settings based on
  * the provided arguments:
+ * - `-i` or `--interface` specifies the network interface to use.
  * - `-h` or `--help` displays the help message with usage instructions.
  *
  * @note If invalid options are provided, the function will display an

@@ -30,13 +30,18 @@ struct Options parse_arguments(const int argc, char *argv[]) {
         .destinationHost = NULL
     };
     const struct option longOptions[] = {
+        {"interface", required_argument, NULL, 'i'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
 
-    while ((currentOption = getopt_long(argc, argv, "h", longOptions, NULL)) != -1) {
+    while ((currentOption = getopt_long(argc, argv, "hi:", longOptions, NULL)) != -1) {
         switch (currentOption) {
+        case 'i': // interface
+            options.interface = optarg;
+            break;
+
         case 'h': // help
             printf("help\n");
             exit(0);
@@ -165,8 +170,7 @@ void wstr(const struct Options* options) {
             exit(1);
         }
 
-        const char interface[] = "enp4s0";
-        if (setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, interface, sizeof(interface)) == -1) {
+        if (options->interface != NULL && setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
             perror("Function setsockopt failed while binding socket to interface!");
             exit(1);
         }
