@@ -15,6 +15,7 @@ struct Options {
     char* destinationHost;
     char* interface;
     unsigned char fqdnFlag;
+    unsigned short maxTimeToLive;
 };
 
 /**
@@ -29,6 +30,7 @@ struct Options {
  * the provided arguments:
  * - `-d` or `--domain` sets the destination domain name (FQDN).
  * - `-i` or `--interface` specifies the network interface to use.
+ * - `-t` or `--ttl` sets the Time to Live (TTL) for network packets.
  * - `-h` or `--help` displays the help message with usage instructions.
  *
  * @note If invalid options are provided, the function will display an

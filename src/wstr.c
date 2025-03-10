@@ -20,7 +20,6 @@
 #include <arpa/inet.h>
 
 #define WORD_LENGTH_IN_BYTES 16
-#define MAX_HOPS 30
 #define PACKET_SIZE 64
 #define DOMAIN_NAME_SIZE 128
 
@@ -29,17 +28,19 @@ struct Options parse_arguments(const int argc, char *argv[]) {
     struct Options options = {
         .destinationHost = NULL,
         .interface = NULL,
-        .fqdnFlag = 0
+        .fqdnFlag = 0,
+        .maxTimeToLive = 30
     };
     const struct option longOptions[] = {
         {"domain", no_argument, NULL, 'd'},
         {"interface", required_argument, NULL, 'i'},
+        {"ttl", required_argument, NULL, 't'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
 
-    while ((currentOption = getopt_long(argc, argv, "di:h", longOptions, NULL)) != -1) {
+    while ((currentOption = getopt_long(argc, argv, "di:t:h", longOptions, NULL)) != -1) {
         switch (currentOption) {
         case 'd': // FQDN
             options.fqdnFlag = 1;
@@ -47,6 +48,10 @@ struct Options parse_arguments(const int argc, char *argv[]) {
 
         case 'i': // interface
             options.interface = optarg;
+            break;
+
+        case 't': // TTL
+            options.maxTimeToLive = atoi(optarg);
             break;
 
         case 'h': // help
@@ -164,7 +169,7 @@ void wstr(const struct Options* options) {
     struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
 
     struct icmp icmpHeader;
-    for (int timeToLive = 1; timeToLive <= MAX_HOPS; timeToLive++) {
+    for (int timeToLive = 1; timeToLive <= options->maxTimeToLive; timeToLive++) {
         struct timespec sendingTime, receivingTime;
         struct sockaddr_in replyAddress;
         char packet[PACKET_SIZE];
