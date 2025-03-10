@@ -28,7 +28,7 @@ struct Options {
  *
  * This function updates the program's global settings based on
  * the provided arguments:
- * - `-d` or `--domain` sets the destination domain name (FQDN).
+ * - `-d` or `--domain` turn on displaying FQDN.
  * - `-i` or `--interface` specifies the network interface to use.
  * - `-t` or `--ttl` sets the Time to Live (TTL) for network packets.
  * - `-h` or `--help` displays the help message with usage instructions.
