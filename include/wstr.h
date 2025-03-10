@@ -27,6 +27,7 @@ struct Options {
  *
  * This function updates the program's global settings based on
  * the provided arguments:
+ * - `-d` or `--domain` sets the destination domain name (FQDN).
  * - `-i` or `--interface` specifies the network interface to use.
  * - `-h` or `--help` displays the help message with usage instructions.
  *
