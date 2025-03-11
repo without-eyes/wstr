@@ -78,16 +78,16 @@ struct Options parse_arguments(const int argc, char *argv[]) {
 
 void handle_getaddrinfo_errors(const int errorValue) {
     switch (errorValue) {
-        case EAI_BADFLAGS:  printf("Invalid value for `ai_flags' field"); break;
-        case EAI_NONAME:    printf("NAME or SERVICE is unknown."); break;
-        case EAI_AGAIN:     printf("Temporary failure in name resolution."); break;
-        case EAI_FAIL:      printf("Non-recoverable failure in name res."); break;
-        case EAI_FAMILY:    printf("`ai_family' not supported."); break;
-        case EAI_SOCKTYPE:  printf("`ai_socktype' not supported."); break;
-        case EAI_SERVICE:   printf("SERVICE not supported for `ai_socktype'."); break;
-        case EAI_MEMORY:    printf("Memory allocation failure."); break;
-        case EAI_SYSTEM:    printf("System error returned in `errno'."); break;
-        case EAI_OVERFLOW:  printf("Argument buffer overflow."); break;
+        case EAI_BADFLAGS:  fprintf(stderr, "Invalid value for `ai_flags' field\n"); break;
+        case EAI_NONAME:    fprintf(stderr, "NAME or SERVICE is unknown.\n"); break;
+        case EAI_AGAIN:     fprintf(stderr, "Temporary failure in name resolution.\n"); break;
+        case EAI_FAIL:      fprintf(stderr, "Non-recoverable failure in name res.\n"); break;
+        case EAI_FAMILY:    fprintf(stderr, "`ai_family' not supported.\n"); break;
+        case EAI_SOCKTYPE:  fprintf(stderr, "`ai_socktype' not supported.\n"); break;
+        case EAI_SERVICE:   fprintf(stderr, "SERVICE not supported for `ai_socktype'.\n"); break;
+        case EAI_MEMORY:    fprintf(stderr, "Memory allocation failure.\n"); break;
+        case EAI_SYSTEM:    fprintf(stderr, "System error returned in `errno'.\n"); break;
+        case EAI_OVERFLOW:  fprintf(stderr, "Argument buffer overflow.\n"); break;
         default:            __builtin_unreachable();
     }
 }
