@@ -8,6 +8,7 @@
 
 #include "../include/wstr.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -46,6 +47,10 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             break;
 
         case 'i': // interface
+            if (optarg == NULL) {
+                fprintf(stderr, "Error: Missing argument for -i (interface)\n");
+                exit(EXIT_FAILURE);
+            }
             options.interface = optarg;
             break;
 
@@ -69,13 +74,13 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             exit(EXIT_SUCCESS);
 
         default:
-            fprintf(stderr, "Invalid option. Use -h for help.\n");
+            fprintf(stderr, "Error: Invalid option. Use -h for help.\n");
             exit(EXIT_FAILURE);
         }
     }
 
     if (optind == argc) {
-        fprintf(stderr, "Destination host is required!\n");
+        fprintf(stderr, "Error: Destination host is required!\n");
         exit(EXIT_FAILURE);
     }
     options.destinationHost = argv[optind];
@@ -85,16 +90,16 @@ struct Options parse_arguments(const int argc, char *argv[]) {
 
 void handle_getaddrinfo_errors(const int errorValue) {
     switch (errorValue) {
-        case EAI_BADFLAGS:  fprintf(stderr, "Invalid value for `ai_flags' field\n"); break;
-        case EAI_NONAME:    fprintf(stderr, "NAME or SERVICE is unknown.\n"); break;
-        case EAI_AGAIN:     fprintf(stderr, "Temporary failure in name resolution.\n"); break;
-        case EAI_FAIL:      fprintf(stderr, "Non-recoverable failure in name res.\n"); break;
-        case EAI_FAMILY:    fprintf(stderr, "`ai_family' not supported.\n"); break;
-        case EAI_SOCKTYPE:  fprintf(stderr, "`ai_socktype' not supported.\n"); break;
-        case EAI_SERVICE:   fprintf(stderr, "SERVICE not supported for `ai_socktype'.\n"); break;
-        case EAI_MEMORY:    fprintf(stderr, "Memory allocation failure.\n"); break;
-        case EAI_SYSTEM:    fprintf(stderr, "System error returned in `errno'.\n"); break;
-        case EAI_OVERFLOW:  fprintf(stderr, "Argument buffer overflow.\n"); break;
+        case EAI_BADFLAGS:  fprintf(stderr, "Error: Invalid value for `ai_flags' field\n"); break;
+        case EAI_NONAME:    fprintf(stderr, "Error: NAME or SERVICE is unknown.\n"); break;
+        case EAI_AGAIN:     fprintf(stderr, "Error: Temporary failure in name resolution.\n"); break;
+        case EAI_FAIL:      fprintf(stderr, "Error: Non-recoverable failure in name res.\n"); break;
+        case EAI_FAMILY:    fprintf(stderr, "Error: `ai_family' not supported.\n"); break;
+        case EAI_SOCKTYPE:  fprintf(stderr, "Error: `ai_socktype' not supported.\n"); break;
+        case EAI_SERVICE:   fprintf(stderr, "Error: SERVICE not supported for `ai_socktype'.\n"); break;
+        case EAI_MEMORY:    fprintf(stderr, "Error: Memory allocation failure.\n"); break;
+        case EAI_SYSTEM:    fprintf(stderr, "Error: System error returned in `errno'.\n"); break;
+        case EAI_OVERFLOW:  fprintf(stderr, "Error: Argument buffer overflow.\n"); break;
         default:            __builtin_unreachable();
     }
 }
@@ -108,6 +113,11 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
     if (result != 0) {
         freeaddrinfo(res);
         handle_getaddrinfo_errors(result);
+        exit(EXIT_FAILURE);
+    }
+
+    if (res == NULL) {
+        fprintf(stderr, "Error: No valid address found for host %s\n", destinationHost);
         exit(EXIT_FAILURE);
     }
 
@@ -136,6 +146,10 @@ unsigned short calculate_checksum(void *buffer, int length) {
 }
 
 void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
+    if (icmpHeader == NULL) {
+        fprintf(stderr, "Error: ICMP header pointer is NULL\n");
+        exit(EXIT_FAILURE);
+    }
     memset(icmpHeader, 0, sizeof(*icmpHeader));
     icmpHeader->icmp_type = ICMP_ECHO;
     icmpHeader->icmp_code = 0;
@@ -145,6 +159,11 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
 }
 
 void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress) {
+    if (replyAddress == NULL) {
+        fprintf(stderr, "Error: Reply address is NULL\n");
+        return;
+    }
+
     char domainName[DOMAIN_NAME_SIZE];
     const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
     if (options->fqdnFlag == 1 && result == 0) {
@@ -162,7 +181,7 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
 void wstr(const struct Options* options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
-        perror("Socket creation failed!");
+        fprintf(stderr, "Error: Socket creation failed! Reason: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -178,36 +197,40 @@ void wstr(const struct Options* options) {
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
         if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
-            perror("Function setsockopt failed while setting TTL!");
+            fprintf(stderr, "Error: Failed to set TTL (setsockopt). Reason: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
 
-        if (options->interface != NULL && setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
-            perror("Function setsockopt failed while binding socket to interface!");
+        if (options->interface != NULL &&
+            setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
+            fprintf(stderr, "Error: Failed to bind socket to interface '%s'. Reason: %s\n", options->interface, strerror(errno));
             exit(EXIT_FAILURE);
         }
 
         if (sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress)) == -1) {
-            perror("Function sendto failed!");
+            fprintf(stderr, "Error: Packet send failed (sendto). Destination: %s, TTL: %d. Reason: %s\n",
+                    inet_ntoa(destinationAddress.sin_addr), timeToLive, strerror(errno));
             exit(EXIT_FAILURE);
         }
 
         socklen_t replyAddressLength = sizeof(replyAddress);
         if (recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength) == -1) {
-            perror("Function recvfrom failed!");
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Error: Packet receive failed (recvfrom). Reason: %s\n", strerror(errno));
+            continue;
         }
 
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
         const struct ip *ipHeader = (struct ip *)packet;
         if (ipHeader->ip_p != IPPROTO_ICMP) {
-            break;
+            fprintf(stderr, "Error: Unexpected protocol received: %d. Expected: ICMP.\n", ipHeader->ip_p);
+            continue;
         }
 
         const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
         if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-            break;
+            fprintf(stderr, "Error: Unexpected ICMP type received: %d\n", icmpReply->icmp_type);
+            continue;
         }
 
         print_hop_info(options, timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress);
@@ -218,4 +241,5 @@ void wstr(const struct Options* options) {
     }
 
     close(socketFileDescriptor);
+
 }
