@@ -59,17 +59,17 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             printf("  -i, --interface   Set network interface\n");
             printf("  -t, --ttl         Set TTL for network packets\n");
             printf("  -h, --help        Show this help message\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
 
         default:
             fprintf(stderr, "Invalid option. Use -h for help.\n");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
     }
 
     if (optind == argc) {
         fprintf(stderr, "Destination host is required!\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
     options.destinationHost = argv[optind];
 
@@ -101,7 +101,7 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
     if (result != 0) {
         freeaddrinfo(res);
         handle_getaddrinfo_errors(result);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     const struct sockaddr_in destinationAddress = *(struct sockaddr_in *)res->ai_addr;
@@ -156,7 +156,7 @@ void wstr(const struct Options* options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
         perror("Socket creation failed!");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
@@ -172,23 +172,23 @@ void wstr(const struct Options* options) {
 
         if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
             perror("Function setsockopt failed while setting TTL!");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         if (options->interface != NULL && setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
             perror("Function setsockopt failed while binding socket to interface!");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         if (sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress)) == -1) {
             perror("Function sendto failed!");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         socklen_t replyAddressLength = sizeof(replyAddress);
         if (recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength) == -1) {
             perror("Function recvfrom failed!");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
