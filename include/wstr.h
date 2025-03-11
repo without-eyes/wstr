@@ -100,13 +100,11 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
     * ICMP request.
     * @param [in]roundTripTime The time taken for hope to respond.
     * @param[in] replyAddress The address of the replying host.
-    * @param[in] packet The packet received from the reply,
-    * containing the ICMP response data.
     *
     * @note This function requires raw socket privileges, so
     * it need to be executed with root permissions.
 */
-void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet);
+void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress);
 
 /**
     * Performs a traceroute to the specified destination host.

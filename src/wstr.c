@@ -39,7 +39,6 @@ struct Options parse_arguments(const int argc, char *argv[]) {
         {0, 0, 0, 0}
     };
 
-
     while ((currentOption = getopt_long(argc, argv, "di:t:h", longOptions, NULL)) != -1) {
         switch (currentOption) {
         case 'd': // FQDN
@@ -138,17 +137,7 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     icmpHeader->icmp_cksum = calculate_checksum(icmpHeader, sizeof(*icmpHeader));
 }
 
-void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress, const char *packet) {
-    const struct ip *ipHeader = (struct ip *)packet;
-    if (ipHeader->ip_p != IPPROTO_ICMP) {
-        return;
-    }
-
-    const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
-    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-        return;
-    }
-
+void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress) {
     char domainName[DOMAIN_NAME_SIZE];
     const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
     if (options->fqdnFlag == 1 && result == 0) {
@@ -204,7 +193,17 @@ void wstr(const struct Options* options) {
 
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
-        print_hop_info(options, timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress, packet);
+        const struct ip *ipHeader = (struct ip *)packet;
+        if (ipHeader->ip_p != IPPROTO_ICMP) {
+            break;
+        }
+
+        const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
+        if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
+            break;
+        }
+
+        print_hop_info(options, timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
             break;
