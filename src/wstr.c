@@ -50,7 +50,14 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             break;
 
         case 't': // TTL
-            options.maxTimeToLive = atoi(optarg);
+            char *endPointer;
+            const long ttl = strtol(optarg, &endPointer, 10);
+
+            if (*endPointer != '\0') {
+                fprintf(stderr, "Invalid TTL value: %s\n", optarg);
+                exit(EXIT_FAILURE);
+            }
+            options.maxTimeToLive = (int) ttl;
             break;
 
         case 'h': // help
