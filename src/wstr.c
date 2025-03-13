@@ -140,7 +140,7 @@ unsigned short calculate_checksum(void *buffer, int length) {
     }
 
     sum = (sum >> WORD_LENGTH_IN_BYTES) + (sum & 0xFFFF);
-    sum += (sum >> WORD_LENGTH_IN_BYTES);
+    sum += sum >> WORD_LENGTH_IN_BYTES;
 
     return ~sum;
 }
@@ -178,12 +178,23 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
             (double)(receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
 }
 
-void wstr(const struct Options* options) {
+int create_socket(const struct Options *options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
         fprintf(stderr, "Error: Socket creation failed! Reason: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
+
+    if (options->interface != NULL && setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
+        fprintf(stderr, "Error: Failed to bind socket to interface '%s'. Reason: %s\n", options->interface, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    return socketFileDescriptor;
+}
+
+void wstr(const struct Options* options) {
+    const int socketFileDescriptor = create_socket(options);
 
     struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
 
@@ -198,12 +209,6 @@ void wstr(const struct Options* options) {
 
         if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
             fprintf(stderr, "Error: Failed to set TTL (setsockopt). Reason: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        if (options->interface != NULL &&
-            setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
-            fprintf(stderr, "Error: Failed to bind socket to interface '%s'. Reason: %s\n", options->interface, strerror(errno));
             exit(EXIT_FAILURE);
         }
 
@@ -241,5 +246,4 @@ void wstr(const struct Options* options) {
     }
 
     close(socketFileDescriptor);
-
 }

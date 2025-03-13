@@ -107,6 +107,20 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
 void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress);
 
 /**
+ * Creates a socket file descriptor and binds it to an interface
+ * if specified.
+ *
+ * @param[in] options The options of wstr passed as arguments
+ * to the program.
+ *
+ * @return The socket file descriptor.
+ *
+ * @note This function requires raw socket privileges,
+ * so it must be executed with root permissions.
+ */
+int create_socket(const struct Options *options);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] options The options of wstr passed as arguments
