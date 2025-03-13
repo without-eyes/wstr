@@ -137,6 +137,16 @@ void handle_error(const char *message, ...);
 void set_socket_ttl(int socketFileDescriptor, int timeToLive);
 
 /**
+    * Sends an ICMP packet to the specified destination address.
+    *
+    * @param[in] socketFileDescriptor The socket file descriptor.
+    * @param[in] icmpHeader Pointer to the ICMP header to send.
+    * @param[in] destAddr Pointer to the destination address structure.
+    * @param[in] timeToLive The Time To Live value.
+*/
+void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader, struct sockaddr_in *destAddr, int timeToLive);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] options The options of wstr passed as arguments

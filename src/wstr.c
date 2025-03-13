@@ -212,6 +212,12 @@ void set_socket_ttl(const int socketFileDescriptor, const int timeToLive) {
     }
 }
 
+void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHeader, struct sockaddr_in *destAddr, const int timeToLive) {
+    if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0, (struct sockaddr *)destAddr, sizeof(*destAddr)) == -1) {
+        handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destAddr->sin_addr), timeToLive);
+    }
+}
+
 void wstr(const struct Options* options) {
     const int socketFileDescriptor = create_socket(options);
 
@@ -227,10 +233,7 @@ void wstr(const struct Options* options) {
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
         set_socket_ttl(socketFileDescriptor, timeToLive);
-
-        if (sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress)) == -1) {
-            handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destinationAddress.sin_addr), timeToLive);
-        }
+        send_icmp_packet(socketFileDescriptor, &icmpHeader, &destinationAddress, timeToLive);
 
         socklen_t replyAddressLength = sizeof(replyAddress);
         if (recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength) == -1) {
