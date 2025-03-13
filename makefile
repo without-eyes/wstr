@@ -1,31 +1,45 @@
-# Compiler and flags
 CC = gcc
-CFLAGS = -Wall -I$(IDIR) -g
+EXT = c
 
-# Directories
-IDIR = ./include/
-SRCDIR = ./src/
+OPT =
+DBG =
+WARNINGS = -Wall -Wextra -Wsign-conversion -Wconversion
 
-# Source files
-SOURCES = $(wildcard $(SRCDIR)/*.c)
+INC_DIRS = ./include/
+INCS = $(foreach DIR,$(INC_DIRS),-I$(DIR))
 
-# Object files
-OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(SRCDIR)/%.o)
+CFLAGS = $(DBG) $(OPT) $(INCS) $(WARNINGS)
 
-# Output binary
-TARGET = wstr
+BUILD_DIR = ./build
+CODE_DIR = ./src
 
-# Main targets
-all: $(TARGET)
+SRC = $(shell find $(CODE_DIR) -name '*.$(EXT)')
+OBJ = $(addprefix $(BUILD_DIR)/,$(notdir $(SRC:.$(EXT)=.o)))
 
-# Rule for compiling the target
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) $(CFLAGS) -o $(TARGET)
+PROJ = wstr
+EXEC = $(PROJ)
 
-# Rule for compiling source files into object files
-$(SRCDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+all: $(BUILD_DIR)/$(EXEC)
+	@echo "========================================="
+	@echo "              BUILD SUCCESS              "
+	@echo "========================================="
 
-# Rule for deleting object and binary files
+release: OPT += -O2
+release: all
+
+debug: DBG += -g -gdwarf-2
+debug: all
+
+$(BUILD_DIR)/%.o: $(CODE_DIR)/%.$(EXT) | $(BUILD_DIR)
+	$(CC) -c $< -o $@ $(CFLAGS)
+
+$(BUILD_DIR)/$(EXEC): $(OBJ)
+	$(CC) $^ -o $@ $(CFLAGS) $(LIBS)
+
+$(BUILD_DIR):
+	mkdir -p $@
+
 clean:
-	rm -f $(SRCDIR)/*.o $(TARGET)
+	rm -rf $(BUILD_DIR)
+
+.PHONY: all release debug clean
