@@ -218,6 +218,13 @@ void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHea
     }
 }
 
+void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct sockaddr_in *replyAddr) {
+    socklen_t addrLen = sizeof(*replyAddr);
+    if (recvfrom(socketFileDescriptor, packet, PACKET_SIZE, 0, (struct sockaddr *)replyAddr, &addrLen) == -1) {
+        handle_error("Packet receive failed (recvfrom)");
+    }
+}
+
 void wstr(const struct Options* options) {
     const int socketFileDescriptor = create_socket(options);
 
@@ -230,17 +237,11 @@ void wstr(const struct Options* options) {
         char packet[PACKET_SIZE];
 
         set_icmp_echo_fields(&icmpHeader, timeToLive);
-        clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
+        clock_gettime(CLOCK_MONOTONIC, &sendingTime);
         set_socket_ttl(socketFileDescriptor, timeToLive);
         send_icmp_packet(socketFileDescriptor, &icmpHeader, &destinationAddress, timeToLive);
-
-        socklen_t replyAddressLength = sizeof(replyAddress);
-        if (recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength) == -1) {
-            handle_error("Packet receive failed (recvfrom)");
-            continue;
-        }
-
+        receive_icmp_packet(socketFileDescriptor, packet, &replyAddress);
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
         const struct ip *ipHeader = (struct ip *)packet;

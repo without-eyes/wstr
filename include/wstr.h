@@ -147,6 +147,15 @@ void set_socket_ttl(int socketFileDescriptor, int timeToLive);
 void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader, struct sockaddr_in *destAddr, int timeToLive);
 
 /**
+    * Receive an ICMP packet from the socket.
+    *
+    * @param[in] socketFileDescriptor The socket file descriptor.
+    * @param[out] packet Buffer to store the received packet.
+    * @param[out] replyAddr Pointer to store the sender's address.
+*/
+void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr_in *replyAddr);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] options The options of wstr passed as arguments
