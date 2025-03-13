@@ -225,6 +225,22 @@ void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct so
     }
 }
 
+int is_valid_icmp_reply(const char *packet) {
+    const struct ip *ipHeader = (const struct ip *)packet;
+    if (ipHeader->ip_p != IPPROTO_ICMP) {
+        fprintf(stderr, "Error: Unexpected protocol %d. Expected ICMP.\n", ipHeader->ip_p);
+        return 0;
+    }
+
+    const struct icmp *icmpReply = (const struct icmp *)(packet + (ipHeader->ip_hl << 2));
+    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
+        fprintf(stderr, "Error: Unexpected ICMP type %d\n", icmpReply->icmp_type);
+        return 0;
+    }
+
+    return 1;
+}
+
 void wstr(const struct Options* options) {
     const int socketFileDescriptor = create_socket(options);
 
@@ -244,19 +260,9 @@ void wstr(const struct Options* options) {
         receive_icmp_packet(socketFileDescriptor, packet, &replyAddress);
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
 
-        const struct ip *ipHeader = (struct ip *)packet;
-        if (ipHeader->ip_p != IPPROTO_ICMP) {
-            fprintf(stderr, "Error: Unexpected protocol received: %d. Expected: ICMP.\n", ipHeader->ip_p);
-            continue;
+        if (is_valid_icmp_reply(packet)) {
+            print_hop_info(options, timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress);
         }
-
-        const struct icmp *icmpReply = (struct icmp *)(packet + (ipHeader->ip_hl << 2));
-        if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-            fprintf(stderr, "Error: Unexpected ICMP type received: %d\n", icmpReply->icmp_type);
-            continue;
-        }
-
-        print_hop_info(options, timeToLive, calculate_round_trip_time(sendingTime, receivingTime), &replyAddress);
 
         if (replyAddress.sin_addr.s_addr == destinationAddress.sin_addr.s_addr) {
             break;

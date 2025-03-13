@@ -156,6 +156,15 @@ void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader, s
 void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr_in *replyAddr);
 
 /**
+    * Checks if an ICMP packet is valid.
+    *
+    * @param[out] packet The received packet.
+    *
+    * @return Returns 1 if true, 0 if false.
+*/
+int is_valid_icmp_reply(const char *packet);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] options The options of wstr passed as arguments
