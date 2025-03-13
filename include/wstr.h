@@ -121,6 +121,14 @@ void print_hop_info(const struct Options *options, int timeToLive, double roundT
 int create_socket(const struct Options *options);
 
 /**
+    * Handles errors by printing a message and exiting the program.
+    *
+    * @param[in] message The error message format string (like printf).
+    * @param[in] ... Additional arguments corresponding to the format specifiers in message.
+*/
+void handle_error(const char *message, ...);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] options The options of wstr passed as arguments

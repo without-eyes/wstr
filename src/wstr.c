@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <getopt.h>
+#include <stdarg.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -23,6 +24,7 @@
 #define WORD_LENGTH_IN_BYTES 16
 #define PACKET_SIZE 64
 #define DOMAIN_NAME_SIZE 128
+#define ERROR_MESSAGE_SIZE 256
 
 struct Options parse_arguments(const int argc, char *argv[]) {
     int currentOption;
@@ -47,10 +49,6 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             break;
 
         case 'i': // interface
-            if (optarg == NULL) {
-                fprintf(stderr, "Error: Missing argument for -i (interface)\n");
-                exit(EXIT_FAILURE);
-            }
             options.interface = optarg;
             break;
 
@@ -181,16 +179,31 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
 int create_socket(const struct Options *options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
-        fprintf(stderr, "Error: Socket creation failed! Reason: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        handle_error("Socket creation failed");
     }
 
     if (options->interface != NULL && setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
-        fprintf(stderr, "Error: Failed to bind socket to interface '%s'. Reason: %s\n", options->interface, strerror(errno));
-        exit(EXIT_FAILURE);
+        handle_error("Failed to bind socket to interface '%s'", options->interface);
     }
 
     return socketFileDescriptor;
+}
+
+void handle_error(const char *message, ...) {
+    char* errorMessage = malloc(ERROR_MESSAGE_SIZE);
+    strcpy(errorMessage, "Error: ");
+    strcat(errorMessage, message);
+    strcat(errorMessage, ". Reason: ");
+    strcat(errorMessage, strerror(errno));
+    strcat(errorMessage, "\n");
+
+    va_list arg;
+    va_start(arg, message);
+    vfprintf (stdout, errorMessage, arg);
+    va_end(arg);
+
+    free(errorMessage);
+    exit(EXIT_FAILURE);
 }
 
 void wstr(const struct Options* options) {
@@ -208,19 +221,16 @@ void wstr(const struct Options* options) {
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
         if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
-            fprintf(stderr, "Error: Failed to set TTL (setsockopt). Reason: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
+            handle_error("Failed to set TTL (setsockopt)");
         }
 
         if (sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress)) == -1) {
-            fprintf(stderr, "Error: Packet send failed (sendto). Destination: %s, TTL: %d. Reason: %s\n",
-                    inet_ntoa(destinationAddress.sin_addr), timeToLive, strerror(errno));
-            exit(EXIT_FAILURE);
+            handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destinationAddress.sin_addr), timeToLive);
         }
 
         socklen_t replyAddressLength = sizeof(replyAddress);
         if (recvfrom(socketFileDescriptor, packet, sizeof(packet), 0, (struct sockaddr *)&replyAddress, &replyAddressLength) == -1) {
-            fprintf(stderr, "Error: Packet receive failed (recvfrom). Reason: %s\n", strerror(errno));
+            handle_error("Packet receive failed (recvfrom)");
             continue;
         }
 
