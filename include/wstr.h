@@ -129,6 +129,14 @@ int create_socket(const struct Options *options);
 void handle_error(const char *message, ...);
 
 /**
+    * Sets the Time To Live option on the socket.
+    *
+    * @param[in] socketFileDescriptor The socket file descriptor.
+    * @param[in] timeToLive The Time To Live value to set.
+*/
+void set_socket_ttl(int socketFileDescriptor, int timeToLive);
+
+/**
     * Performs a traceroute to the specified destination host.
     *
     * @param[in] options The options of wstr passed as arguments

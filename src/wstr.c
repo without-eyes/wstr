@@ -206,6 +206,12 @@ void handle_error(const char *message, ...) {
     exit(EXIT_FAILURE);
 }
 
+void set_socket_ttl(const int socketFileDescriptor, const int timeToLive) {
+    if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
+        handle_error("Failed to set TTL (setsockopt)");
+    }
+}
+
 void wstr(const struct Options* options) {
     const int socketFileDescriptor = create_socket(options);
 
@@ -220,9 +226,7 @@ void wstr(const struct Options* options) {
         set_icmp_echo_fields(&icmpHeader, timeToLive);
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
 
-        if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
-            handle_error("Failed to set TTL (setsockopt)");
-        }
+        set_socket_ttl(socketFileDescriptor, timeToLive);
 
         if (sendto(socketFileDescriptor, &icmpHeader, sizeof(icmpHeader), 0, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress)) == -1) {
             handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destinationAddress.sin_addr), timeToLive);
