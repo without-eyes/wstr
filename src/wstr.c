@@ -156,18 +156,21 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     icmpHeader->icmp_cksum = calculate_checksum(icmpHeader, sizeof(*icmpHeader));
 }
 
-void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime, const struct sockaddr_in *replyAddress) {
+void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime,
+                    const struct sockaddr_in *replyAddress) {
     if (replyAddress == NULL) {
         fprintf(stderr, "Error: Reply address is NULL\n");
         return;
     }
 
     char domainName[DOMAIN_NAME_SIZE];
-    const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName, sizeof(domainName), NULL, 0, NI_NAMEREQD);
-    if (options->fqdnFlag == 1 && result == 0) {
-        printf("%2d  %7.3lfms   %-15s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr), domainName);
-    } else {
+    const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName,
+                                    sizeof(domainName), NULL, 0, NI_NAMEREQD);
+    if (options->fqdnFlag != 1 || result != 0) {
         printf("%2d  %7.3lfms   %-15s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
+    } else {
+        printf("%2d  %7.3lfms   %-15s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr),
+                                                    domainName);
     }
 }
 
@@ -182,7 +185,9 @@ int create_socket(const struct Options *options) {
         handle_error("Socket creation failed");
     }
 
-    if (options->interface != NULL && setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface, sizeof(options->interface)) == -1) {
+    if (options->interface != NULL &&
+        setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface,
+                    sizeof(options->interface)) == -1) {
         handle_error("Failed to bind socket to interface '%s'", options->interface);
     }
 
@@ -199,27 +204,32 @@ void handle_error(const char *message, ...) {
 
     va_list arg;
     va_start(arg, message);
-    vfprintf (stdout, errorMessage, arg);
+    vfprintf(stdout, errorMessage, arg);
     va_end(arg);
 
     exit(EXIT_FAILURE);
 }
 
 void set_socket_ttl(const int socketFileDescriptor, const int timeToLive) {
-    if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive, sizeof(timeToLive)) == -1) {
+    if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive,
+                sizeof(timeToLive)) == -1) {
         handle_error("Failed to set TTL (setsockopt)");
     }
 }
 
-void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHeader, const struct sockaddr_in *destinationAddress, const int timeToLive) {
-    if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0, (struct sockaddr *)destinationAddress, sizeof(*destinationAddress)) == -1) {
-        handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destinationAddress->sin_addr), timeToLive);
+void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHeader,
+                      const struct sockaddr_in *destinationAddress, const int timeToLive) {
+    if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0,
+                (struct sockaddr *)destinationAddress, sizeof(*destinationAddress)) == -1) {
+        handle_error("Packet send failed (sendto). Destination: %s, TTL: %d",
+                      inet_ntoa(destinationAddress->sin_addr), timeToLive);
     }
 }
 
 void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct sockaddr_in *replyAddr) {
     socklen_t addrLen = sizeof(*replyAddr);
-    if (recvfrom(socketFileDescriptor, packet, PACKET_SIZE, 0, (struct sockaddr *)replyAddr, &addrLen) == -1) {
+    if (recvfrom(socketFileDescriptor, packet, PACKET_SIZE, 0, (struct sockaddr *)replyAddr,
+                  &addrLen) == -1) {
         handle_error("Packet receive failed (recvfrom)");
     }
 }

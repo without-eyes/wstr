@@ -104,7 +104,8 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
     * @note This function requires raw socket privileges, so
     * it need to be executed with root permissions.
 */
-void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress);
+void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime,
+                    const struct sockaddr_in *replyAddress);
 
 /**
     * Creates a socket file descriptor and binds it to an interface
@@ -144,7 +145,8 @@ void set_socket_ttl(int socketFileDescriptor, int timeToLive);
     * @param[in] destinationAddress Pointer to the destination address structure.
     * @param[in] timeToLive The Time To Live value.
 */
-void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader, const struct sockaddr_in *destinationAddress, int timeToLive);
+void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader,
+                      const struct sockaddr_in *destinationAddress, int timeToLive);
 
 /**
     * Receive an ICMP packet from the socket.
