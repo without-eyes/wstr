@@ -190,7 +190,7 @@ int create_socket(const struct Options *options) {
 }
 
 void handle_error(const char *message, ...) {
-    char* errorMessage = malloc(ERROR_MESSAGE_SIZE);
+    char errorMessage[ERROR_MESSAGE_SIZE];
     strcpy(errorMessage, "Error: ");
     strcat(errorMessage, message);
     strcat(errorMessage, ". Reason: ");
@@ -202,7 +202,6 @@ void handle_error(const char *message, ...) {
     vfprintf (stdout, errorMessage, arg);
     va_end(arg);
 
-    free(errorMessage);
     exit(EXIT_FAILURE);
 }
 
