@@ -109,7 +109,6 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
 
     const int result = getaddrinfo(destinationHost, NULL, &hints, &res);
     if (result != 0) {
-        freeaddrinfo(res);
         handle_getaddrinfo_errors(result);
         exit(EXIT_FAILURE);
     }
