@@ -19,34 +19,34 @@ struct Options {
 };
 
 /**
- * Processes the command-line arguments passed to the program.
- *
- * @param[in] argc The number of arguments passed to the program
- * (including the program name).
- * @param[in] argv An array of strings representing the
- * command-line arguments.
- *
- * This function updates the program's global settings based on
- * the provided arguments:
- * - `-d` or `--domain` turn on displaying FQDN.
- * - `-i` or `--interface` specifies the network interface to use.
- * - `-t` or `--ttl` sets the Time to Live (TTL) for network packets.
- * - `-h` or `--help` displays the help message with usage instructions.
- *
- * @note If invalid options are provided, the function will display an
- * error message and exit the program. The `-h` or `--help` option will
- * display the available options.
- *
- * @return Returns parsed arguments as struct Options.
- */
+    * Processes the command-line arguments passed to the program.
+    *
+    * @param[in] argc The number of arguments passed to the program
+    * (including the program name).
+    * @param[in] argv An array of strings representing the
+    * command-line arguments.
+    *
+    * This function updates the program's global settings based on
+    * the provided arguments:
+    * - `-d` or `--domain` turn on displaying FQDN.
+    * - `-i` or `--interface` specifies the network interface to use.
+    * - `-t` or `--ttl` sets the Time to Live (TTL) for network packets.
+    * - `-h` or `--help` displays the help message with usage instructions.
+    *
+    * @note If invalid options are provided, the function will display an
+    * error message and exit the program. The `-h` or `--help` option will
+    * display the available options.
+    *
+    * @return Returns parsed arguments as struct Options.
+*/
 struct Options parse_arguments(int argc, char *argv[]);
 
 /**
- * Handles errors returned by the getaddrinfo function.
- *
- * @param[in] errorValue The error code returned by getaddrinfo
- * function.
- */
+    * Handles errors returned by the getaddrinfo function.
+    *
+    * @param[in] errorValue The error code returned by getaddrinfo
+    * function.
+*/
 void handle_getaddrinfo_errors(int errorValue);
 
 /**
@@ -72,7 +72,7 @@ unsigned short calculate_checksum(void *buffer, int length);
 /**
     * Initializes an ICMP Echo Request packet.
     *
-    * @param[in] icmpHeader Pointer to the ICMP header structure
+    * @param[out] icmpHeader Pointer to the ICMP header structure
     * to initialize.
     * @param[in] timeToLive The time to live of icmp packet.
 */
@@ -98,7 +98,7 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
     * to program.
     * @param[in] timeToLive The current TTL value used in the
     * ICMP request.
-    * @param [in]roundTripTime The time taken for hope to respond.
+    * @param[in] roundTripTime The time taken for hope to respond.
     * @param[in] replyAddress The address of the replying host.
     *
     * @note This function requires raw socket privileges, so
@@ -107,17 +107,17 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
 void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime, const struct sockaddr_in *replyAddress);
 
 /**
- * Creates a socket file descriptor and binds it to an interface
- * if specified.
- *
- * @param[in] options The options of wstr passed as arguments
- * to the program.
- *
- * @return The socket file descriptor.
- *
- * @note This function requires raw socket privileges,
- * so it must be executed with root permissions.
- */
+    * Creates a socket file descriptor and binds it to an interface
+    * if specified.
+    *
+    * @param[in] options The options of wstr passed as arguments
+    * to the program.
+    *
+    * @return The socket file descriptor.
+    *
+    * @note This function requires raw socket privileges,
+    * so it must be executed with root permissions.
+*/
 int create_socket(const struct Options *options);
 
 /**
@@ -158,7 +158,7 @@ void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr
 /**
     * Checks if an ICMP packet is valid.
     *
-    * @param[out] packet The received packet.
+    * @param[in] packet The received packet.
     *
     * @return Returns 1 if true, 0 if false.
 */
