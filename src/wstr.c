@@ -86,30 +86,13 @@ struct Options parse_arguments(const int argc, char *argv[]) {
     return options;
 }
 
-void handle_getaddrinfo_errors(const int errorValue) {
-    switch (errorValue) {
-        case EAI_BADFLAGS:  fprintf(stderr, "Error: Invalid value for `ai_flags' field\n"); break;
-        case EAI_NONAME:    fprintf(stderr, "Error: NAME or SERVICE is unknown.\n"); break;
-        case EAI_AGAIN:     fprintf(stderr, "Error: Temporary failure in name resolution.\n"); break;
-        case EAI_FAIL:      fprintf(stderr, "Error: Non-recoverable failure in name res.\n"); break;
-        case EAI_FAMILY:    fprintf(stderr, "Error: `ai_family' not supported.\n"); break;
-        case EAI_SOCKTYPE:  fprintf(stderr, "Error: `ai_socktype' not supported.\n"); break;
-        case EAI_SERVICE:   fprintf(stderr, "Error: SERVICE not supported for `ai_socktype'.\n"); break;
-        case EAI_MEMORY:    fprintf(stderr, "Error: Memory allocation failure.\n"); break;
-        case EAI_SYSTEM:    fprintf(stderr, "Error: System error returned in `errno'.\n"); break;
-        case EAI_OVERFLOW:  fprintf(stderr, "Error: Argument buffer overflow.\n"); break;
-        default:            __builtin_unreachable();
-    }
-}
-
 struct sockaddr_in resolve_host(const char *destinationHost) {
     struct addrinfo hints = {0}, *res;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    const int result = getaddrinfo(destinationHost, NULL, &hints, &res);
-    if (result != 0) {
-        handle_getaddrinfo_errors(result);
+    if (getaddrinfo(destinationHost, NULL, &hints, &res) != 0) {
+        handle_error("Failed to resolve host");
         exit(EXIT_FAILURE);
     }
 
