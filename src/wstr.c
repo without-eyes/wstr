@@ -212,9 +212,9 @@ void set_socket_ttl(const int socketFileDescriptor, const int timeToLive) {
     }
 }
 
-void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHeader, struct sockaddr_in *destAddr, const int timeToLive) {
-    if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0, (struct sockaddr *)destAddr, sizeof(*destAddr)) == -1) {
-        handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destAddr->sin_addr), timeToLive);
+void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHeader, const struct sockaddr_in *destinationAddress, const int timeToLive) {
+    if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0, (struct sockaddr *)destinationAddress, sizeof(*destinationAddress)) == -1) {
+        handle_error("Packet send failed (sendto). Destination: %s, TTL: %d", inet_ntoa(destinationAddress->sin_addr), timeToLive);
     }
 }
 
@@ -244,7 +244,7 @@ int is_valid_icmp_reply(const char *packet) {
 void wstr(const struct Options* options) {
     const int socketFileDescriptor = create_socket(options);
 
-    struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
+    const struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
 
     struct icmp icmpHeader;
     for (int timeToLive = 1; timeToLive <= options->maxTimeToLive; timeToLive++) {

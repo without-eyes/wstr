@@ -141,10 +141,10 @@ void set_socket_ttl(int socketFileDescriptor, int timeToLive);
     *
     * @param[in] socketFileDescriptor The socket file descriptor.
     * @param[in] icmpHeader Pointer to the ICMP header to send.
-    * @param[in] destAddr Pointer to the destination address structure.
+    * @param[in] destinationAddress Pointer to the destination address structure.
     * @param[in] timeToLive The Time To Live value.
 */
-void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader, struct sockaddr_in *destAddr, int timeToLive);
+void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader, const struct sockaddr_in *destinationAddress, int timeToLive);
 
 /**
     * Receive an ICMP packet from the socket.
