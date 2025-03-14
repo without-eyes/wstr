@@ -171,7 +171,7 @@ void print_hop_info(const struct Options *options, const int timeToLive, const d
     }
 }
 
-double calculate_round_trip_time(const struct timespec sendingTime, const struct timespec receivingTime) {
+inline double calculate_round_trip_time(const struct timespec sendingTime, const struct timespec receivingTime) {
     return (double)(receivingTime.tv_sec - sendingTime.tv_sec) * 1000.0 +
             (double)(receivingTime.tv_nsec - sendingTime.tv_nsec) / 1000000.0;
 }
