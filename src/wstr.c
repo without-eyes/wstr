@@ -57,7 +57,7 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             const long ttl = strtol(optarg, &endPointer, 10);
 
             if (*endPointer != '\0') {
-                fprintf(stderr, "Invalid TTL value: %s\n", optarg);
+                handle_error("Invalid TTL value: %s\n", optarg);
                 exit(EXIT_FAILURE);
             }
             options.maxTimeToLive = (int) ttl;
@@ -72,13 +72,13 @@ struct Options parse_arguments(const int argc, char *argv[]) {
             exit(EXIT_SUCCESS);
 
         default:
-            fprintf(stderr, "Error: Invalid option. Use -h for help.\n");
+            handle_error("Invalid option. Use -h for help.");
             exit(EXIT_FAILURE);
         }
     }
 
     if (optind == argc) {
-        fprintf(stderr, "Error: Destination host is required!\n");
+        handle_error("Destination host is required!");
         exit(EXIT_FAILURE);
     }
     options.destinationHost = argv[optind];
@@ -97,7 +97,7 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
     }
 
     if (res == NULL) {
-        fprintf(stderr, "Error: No valid address found for host %s\n", destinationHost);
+        handle_error("No valid address found for host %s", destinationHost);
         exit(EXIT_FAILURE);
     }
 
@@ -127,7 +127,7 @@ unsigned short calculate_checksum(void *buffer, int length) {
 
 void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     if (icmpHeader == NULL) {
-        fprintf(stderr, "Error: ICMP header pointer is NULL\n");
+        handle_error("ICMP header pointer is NULL");
         exit(EXIT_FAILURE);
     }
     memset(icmpHeader, 0, sizeof(*icmpHeader));
@@ -141,7 +141,7 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
 void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime,
                     const struct sockaddr_in *replyAddress) {
     if (replyAddress == NULL) {
-        fprintf(stderr, "Error: Reply address is NULL\n");
+        handle_error("Reply address is NULL");
         return;
     }
 
@@ -180,8 +180,12 @@ void handle_error(const char *message, ...) {
     char errorMessage[ERROR_MESSAGE_SIZE];
     strcpy(errorMessage, "Error: ");
     strcat(errorMessage, message);
-    strcat(errorMessage, ". Reason: ");
-    strcat(errorMessage, strerror(errno));
+
+    const char* strerrorResult = strerror(errno);
+    if (strcmp(strerrorResult, "Success") != 0) {
+        strcat(errorMessage, ". Reason: ");
+        strcat(errorMessage, strerrorResult);
+    }
     strcat(errorMessage, "\n");
 
     va_list arg;
@@ -219,13 +223,13 @@ void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct so
 int is_valid_icmp_reply(const char *packet) {
     const struct ip *ipHeader = (const struct ip *)packet;
     if (ipHeader->ip_p != IPPROTO_ICMP) {
-        fprintf(stderr, "Error: Unexpected protocol %d. Expected ICMP.\n", ipHeader->ip_p);
+        handle_error("Unexpected protocol %d. Expected ICMP.\n", ipHeader->ip_p);
         return 0;
     }
 
     const struct icmp *icmpReply = (const struct icmp *)(packet + (ipHeader->ip_hl << 2));
     if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-        fprintf(stderr, "Error: Unexpected ICMP type %d\n", icmpReply->icmp_type);
+        handle_error("Unexpected ICMP type %d\n", icmpReply->icmp_type);
         return 0;
     }
 
