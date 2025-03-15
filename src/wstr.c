@@ -8,17 +8,15 @@
 
 #include "../include/wstr.h"
 
-#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
+#include <time.h>
+#include <errno.h>
+#include <getopt.h>
 #include <unistd.h>
 #include <netdb.h>
-#include <stdlib.h>
-#include <time.h>
-#include <getopt.h>
-#include <stdarg.h>
-#include <sys/socket.h>
-#include <netinet/ip.h>
 #include <arpa/inet.h>
 
 #define WORD_LENGTH_IN_BYTES 16
