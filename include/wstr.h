@@ -14,8 +14,8 @@
 struct Options {
     char* destinationHost;
     char* interface;
-    unsigned char fqdnFlag;
-    unsigned short maxTimeToLive;
+    uint8_t fqdnFlag;
+    uint16_t maxTimeToLive;
 };
 
 /**
@@ -39,7 +39,7 @@ struct Options {
     *
     * @return Returns parsed arguments as struct Options.
 */
-struct Options parse_arguments(int argc, char *argv[]);
+struct Options parse_arguments(uint8_t argc, char *argv[]);
 
 /**
     * Resolves the given hostname to an IP address.
@@ -59,7 +59,7 @@ struct sockaddr_in resolve_host(const char *destinationHost);
     *
     * @return Returns computed cheksum.
 */
-unsigned short calculate_checksum(void *buffer, int length);
+uint32_t calculate_checksum(void *buffer, uint16_t length);
 
 /**
     * Initializes an ICMP Echo Request packet.
@@ -68,7 +68,7 @@ unsigned short calculate_checksum(void *buffer, int length);
     * to initialize.
     * @param[in] timeToLive The time to live of icmp packet.
 */
-void set_icmp_echo_fields(struct icmp* icmpHeader, int timeToLive);
+void set_icmp_echo_fields(struct icmp* icmpHeader, uint8_t timeToLive);
 
 /**
     * Calculates the round trip time (RTT) between sending and
@@ -96,7 +96,7 @@ double calculate_round_trip_time(struct timespec sendingTime, struct timespec re
     * @note This function requires raw socket privileges, so
     * it need to be executed with root permissions.
 */
-void print_hop_info(const struct Options *options, int timeToLive, double roundTripTime,
+void print_hop_info(const struct Options *options, uint8_t timeToLive, double roundTripTime,
                     const struct sockaddr_in *replyAddress);
 
 /**
@@ -127,7 +127,7 @@ void handle_error(const char *message, ...);
     * @param[in] socketFileDescriptor The socket file descriptor.
     * @param[in] timeToLive The Time To Live value to set.
 */
-void set_socket_ttl(int socketFileDescriptor, int timeToLive);
+void set_socket_ttl(int socketFileDescriptor, uint8_t timeToLive);
 
 /**
     * Sends an ICMP packet to the specified destination address.
@@ -138,7 +138,7 @@ void set_socket_ttl(int socketFileDescriptor, int timeToLive);
     * @param[in] timeToLive The Time To Live value.
 */
 void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader,
-                      const struct sockaddr_in *destinationAddress, int timeToLive);
+                      const struct sockaddr_in *destinationAddress, uint8_t timeToLive);
 
 /**
     * Receive an ICMP packet from the socket.
@@ -156,7 +156,7 @@ void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr
     *
     * @return Returns 1 if true, 0 if false.
 */
-int is_valid_icmp_reply(const char *packet);
+uint8_t is_valid_icmp_reply(const char *packet);
 
 /**
     * Performs a traceroute to the specified destination host.

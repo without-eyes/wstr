@@ -26,7 +26,7 @@
 #define DOMAIN_NAME_SIZE 128
 #define ERROR_MESSAGE_SIZE 256
 
-struct Options parse_arguments(const int argc, char *argv[]) {
+struct Options parse_arguments(const uint8_t argc, char *argv[]) {
     int currentOption;
     struct Options options = {
         .destinationHost = NULL,
@@ -60,14 +60,19 @@ struct Options parse_arguments(const int argc, char *argv[]) {
                 handle_error("Invalid TTL value: %s\n", optarg);
                 exit(EXIT_FAILURE);
             }
-            options.maxTimeToLive = (int) ttl;
+
+            if (ttl < 0 || ttl > UINT8_MAX) {
+                handle_error("TTL value is out of range(0-255): %s\n", optarg);
+                exit(EXIT_FAILURE);
+            }
+            options.maxTimeToLive = (uint8_t) ttl;
             break;
 
         case 'h': // help
             printf("Usage: sudo wstr [-d] [-i name] [-t number] destination\n");
             printf("  -d, --domain      Turn on displaying FQDN\n");
             printf("  -i, --interface   Set network interface\n");
-            printf("  -t, --ttl         Set TTL for network packets\n");
+            printf("  -t, --ttl         Set TTL(0-255) for network packets\n");
             printf("  -h, --help        Show this help message\n");
             exit(EXIT_SUCCESS);
 
@@ -107,16 +112,16 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
     return destinationAddress;
 }
 
-unsigned short calculate_checksum(void *buffer, int length) {
-    unsigned short *wordPointer = buffer;
-    unsigned int sum = 0;
+uint32_t calculate_checksum(void *buffer, uint16_t length) {
+    uint16_t *wordPointer = buffer;
+    uint32_t sum = 0;
 
     for (sum = 0; length > 1; length -= 2) {
         sum += *wordPointer++;
     }
 
     if (length == 1) {
-        sum += *(unsigned char *)wordPointer;
+        sum += *(uint8_t*)wordPointer;
     }
 
     sum = (sum >> WORD_LENGTH_IN_BYTES) + (sum & 0xFFFF);
@@ -125,7 +130,7 @@ unsigned short calculate_checksum(void *buffer, int length) {
     return ~sum;
 }
 
-void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
+void set_icmp_echo_fields(struct icmp* icmpHeader, const uint8_t timeToLive) {
     if (icmpHeader == NULL) {
         handle_error("ICMP header pointer is NULL");
         exit(EXIT_FAILURE);
@@ -133,12 +138,12 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const int timeToLive) {
     memset(icmpHeader, 0, sizeof(*icmpHeader));
     icmpHeader->icmp_type = ICMP_ECHO;
     icmpHeader->icmp_code = 0;
-    icmpHeader->icmp_id = getpid();
+    icmpHeader->icmp_id = (uint16_t)getpid();
     icmpHeader->icmp_seq = timeToLive;
-    icmpHeader->icmp_cksum = calculate_checksum(icmpHeader, sizeof(*icmpHeader));
+    icmpHeader->icmp_cksum = (uint16_t)calculate_checksum(icmpHeader, sizeof(*icmpHeader));
 }
 
-void print_hop_info(const struct Options *options, const int timeToLive, const double roundTripTime,
+void print_hop_info(const struct Options *options, const uint8_t timeToLive, const double roundTripTime,
                     const struct sockaddr_in *replyAddress) {
     if (replyAddress == NULL) {
         handle_error("Reply address is NULL");
@@ -196,7 +201,7 @@ void handle_error(const char *message, ...) {
     exit(EXIT_FAILURE);
 }
 
-void set_socket_ttl(const int socketFileDescriptor, const int timeToLive) {
+void set_socket_ttl(const int socketFileDescriptor, const uint8_t timeToLive) {
     if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive,
                 sizeof(timeToLive)) == -1) {
         handle_error("Failed to set TTL (setsockopt)");
@@ -204,7 +209,7 @@ void set_socket_ttl(const int socketFileDescriptor, const int timeToLive) {
 }
 
 void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHeader,
-                      const struct sockaddr_in *destinationAddress, const int timeToLive) {
+                      const struct sockaddr_in *destinationAddress, const uint8_t timeToLive) {
     if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0,
                 (struct sockaddr *)destinationAddress, sizeof(*destinationAddress)) == -1) {
         handle_error("Packet send failed (sendto). Destination: %s, TTL: %d",
@@ -220,7 +225,7 @@ void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct so
     }
 }
 
-int is_valid_icmp_reply(const char *packet) {
+uint8_t is_valid_icmp_reply(const char *packet) {
     const struct ip *ipHeader = (const struct ip *)packet;
     if (ipHeader->ip_p != IPPROTO_ICMP) {
         handle_error("Unexpected protocol %d. Expected ICMP.\n", ipHeader->ip_p);
@@ -242,7 +247,7 @@ void wstr(const struct Options* options) {
     const struct sockaddr_in destinationAddress = resolve_host(options->destinationHost);
 
     struct icmp icmpHeader;
-    for (int timeToLive = 1; timeToLive <= options->maxTimeToLive; timeToLive++) {
+    for (uint8_t timeToLive = 1; timeToLive <= options->maxTimeToLive; timeToLive++) {
         struct timespec sendingTime, receivingTime;
         struct sockaddr_in replyAddress;
         char packet[PACKET_SIZE];
