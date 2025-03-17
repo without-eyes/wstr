@@ -226,13 +226,13 @@ void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct so
 uint8_t is_valid_icmp_reply(const char *packet) {
     const struct ip *ipHeader = (const struct ip *)packet;
     if (ipHeader->ip_p != IPPROTO_ICMP) {
-        handle_error("Unexpected protocol %d. Expected ICMP.\n", ipHeader->ip_p);
+        handle_error("Unexpected protocol %d. Expected ICMP.", ipHeader->ip_p);
         return 0;
     }
 
     const struct icmp *icmpReply = (const struct icmp *)(packet + (ipHeader->ip_hl << 2));
     if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-        handle_error("Unexpected ICMP type %d\n", icmpReply->icmp_type);
+        handle_error("Unexpected ICMP type %d", icmpReply->icmp_type);
         return 0;
     }
 
