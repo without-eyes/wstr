@@ -10,6 +10,7 @@
 #define WSTR_H
 
 #include <netinet/ip_icmp.h>
+#include <time.h>
 
 struct Options {
     char* destinationHost;
