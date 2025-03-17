@@ -6,7 +6,7 @@
     * to Without eyeS's Traceroute(WSTR).
 */
 
-#include "../include/wstr.h"
+#include "wstr.h"
 
 #include <stdio.h>
 #include <stdlib.h>
