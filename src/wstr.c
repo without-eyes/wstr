@@ -252,7 +252,7 @@ uint8_t is_valid_icmp_reply(const char *packet) {
 }
 
 void set_socket_timeout(const struct Options* options, const int socketFileDescriptor) {
-    const struct timeval timeout = {options->timeout, 0};
+    const struct timespec timeout = {options->timeout, 0};
     if (setsockopt(socketFileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
         handle_error(1, "Failed to set socket receive timeout");
     }
