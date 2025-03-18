@@ -16,7 +16,7 @@ struct Options {
     char* destinationHost;
     char* interface;
     uint8_t fqdnFlag;
-    uint16_t maxTimeToLive;
+    uint8_t maxTimeToLive;
 };
 
 /**
