@@ -17,6 +17,7 @@ struct Options {
     char* interface;
     uint8_t fqdnFlag;
     uint8_t maxTimeToLive;
+    uint8_t timeout;
 };
 
 /**
@@ -32,6 +33,7 @@ struct Options {
     * - `-d` or `--domain` turn on displaying FQDN.
     * - `-i` or `--interface` specifies the network interface to use.
     * - `-t` or `--ttl` sets the Time to Live (TTL) for network packets.
+    * - `-o` or `--timeout` sets timeout (in seconds) for network packets.
     * - `-h` or `--help` displays the help message with usage instructions.
     *
     * @note If invalid options are provided, the function will display an
@@ -161,6 +163,15 @@ void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr
     * @return Returns 1 if true, 0 if false.
 */
 uint8_t is_valid_icmp_reply(const char *packet);
+
+/**
+    * Sets the timeout value for the socket.
+    *
+    * @param[in] options The options of wstr passed as arguments
+    * to program.
+    * @param[in] socketFileDescriptor The socket file descriptor..
+*/
+void set_socket_timeout(const struct Options* options, int socketFileDescriptor);
 
 /**
     * Performs a traceroute to the specified destination host.

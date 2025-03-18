@@ -30,17 +30,19 @@ struct Options parse_arguments(const uint8_t argc, char *argv[]) {
         .destinationHost = NULL,
         .interface = NULL,
         .fqdnFlag = 0,
-        .maxTimeToLive = 30
+        .maxTimeToLive = 30,
+        .timeout = 3
     };
     const struct option longOptions[] = {
         {"domain", no_argument, NULL, 'd'},
         {"interface", required_argument, NULL, 'i'},
         {"ttl", required_argument, NULL, 't'},
+        {"timeout", required_argument, NULL, 'o'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
     };
 
-    while ((currentOption = getopt_long(argc, argv, "di:t:h", longOptions, NULL)) != -1) {
+    while ((currentOption = getopt_long(argc, argv, "di:t:o:h", longOptions, NULL)) != -1) {
         switch (currentOption) {
         case 'd': // FQDN
             options.fqdnFlag = 1;
@@ -51,10 +53,10 @@ struct Options parse_arguments(const uint8_t argc, char *argv[]) {
             break;
 
         case 't': // TTL
-            char *endPointer;
-            const long ttl = strtol(optarg, &endPointer, 10);
+            char *ttlEndPointer;
+            const long ttl = strtol(optarg, &ttlEndPointer, 10);
 
-            if (*endPointer != '\0') {
+            if (*ttlEndPointer != '\0') {
                 handle_error(1, "Invalid TTL value: %s\n", optarg);
             }
 
@@ -64,11 +66,26 @@ struct Options parse_arguments(const uint8_t argc, char *argv[]) {
             options.maxTimeToLive = (uint8_t) ttl;
             break;
 
+        case 'o': // Timeout
+            char *timeoutEndPointer;
+            const long timeout = strtol(optarg, &timeoutEndPointer, 10);
+
+            if (*timeoutEndPointer != '\0') {
+                handle_error(1, "Invalid timeout value: %s\n", optarg);
+            }
+
+            if (timeout < 1 || timeout > UINT8_MAX) {
+                handle_error(1, "Timeout value is out of range(1-255): %s\n", optarg);
+            }
+            options.timeout = (uint8_t) timeout;
+            break;
+
         case 'h': // help
             printf("Usage: sudo wstr [-d] [-i name] [-t number] destination\n");
             printf("  -d, --domain      Turn on displaying FQDN\n");
             printf("  -i, --interface   Set network interface\n");
             printf("  -t, --ttl         Set TTL(0-255) for network packets\n");
+            printf("  -o  --timeout     Sets timeout (in seconds, 1-255) for network packets.\n");
             printf("  -h, --help        Show this help message\n");
             exit(EXIT_SUCCESS);
 
@@ -226,12 +243,19 @@ uint8_t is_valid_icmp_reply(const char *packet) {
     }
 
     const struct icmp *icmpReply = (const struct icmp *)(packet + (ipHeader->ip_hl << 2));
-    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED && icmpReply->icmp_type != ICMP_DEST_UNREACH) {
+    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
         handle_error(0, "Unexpected ICMP type %d", icmpReply->icmp_type);
         return 0;
     }
 
     return 1;
+}
+
+void set_socket_timeout(const struct Options* options, const int socketFileDescriptor) {
+    const struct timeval timeout = {options->timeout, 0};
+    if (setsockopt(socketFileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
+        handle_error(1, "Failed to set socket receive timeout");
+    }
 }
 
 void wstr(const struct Options* options) {
@@ -249,6 +273,7 @@ void wstr(const struct Options* options) {
 
         clock_gettime(CLOCK_MONOTONIC, &sendingTime);
         set_socket_ttl(socketFileDescriptor, timeToLive);
+        set_socket_timeout(options, socketFileDescriptor);
         send_icmp_packet(socketFileDescriptor, &icmpHeader, &destinationAddress, timeToLive);
         receive_icmp_packet(socketFileDescriptor, packet, &replyAddress);
         clock_gettime(CLOCK_MONOTONIC, &receivingTime);
