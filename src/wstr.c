@@ -55,13 +55,11 @@ struct Options parse_arguments(const uint8_t argc, char *argv[]) {
             const long ttl = strtol(optarg, &endPointer, 10);
 
             if (*endPointer != '\0') {
-                handle_error("Invalid TTL value: %s\n", optarg);
-                exit(EXIT_FAILURE);
+                handle_error(1, "Invalid TTL value: %s\n", optarg);
             }
 
             if (ttl < 0 || ttl > UINT8_MAX) {
-                handle_error("TTL value is out of range(0-255): %s\n", optarg);
-                exit(EXIT_FAILURE);
+                handle_error(1, "TTL value is out of range(0-255): %s\n", optarg);
             }
             options.maxTimeToLive = (uint8_t) ttl;
             break;
@@ -75,14 +73,12 @@ struct Options parse_arguments(const uint8_t argc, char *argv[]) {
             exit(EXIT_SUCCESS);
 
         default:
-            handle_error("Invalid option. Use -h for help.");
-            exit(EXIT_FAILURE);
+            handle_error(1, "Invalid option. Use -h for help.");
         }
     }
 
     if (optind == argc) {
-        handle_error("Destination host is required!");
-        exit(EXIT_FAILURE);
+        handle_error(1, "Destination host is required!");
     }
     options.destinationHost = argv[optind];
 
@@ -95,13 +91,11 @@ struct sockaddr_in resolve_host(const char *destinationHost) {
     hints.ai_socktype = SOCK_STREAM;
 
     if (getaddrinfo(destinationHost, NULL, &hints, &res) != 0) {
-        handle_error("Failed to resolve host");
-        exit(EXIT_FAILURE);
+        handle_error(1, "Failed to resolve host");
     }
 
     if (res == NULL) {
-        handle_error("No valid address found for host %s", destinationHost);
-        exit(EXIT_FAILURE);
+        handle_error(1, "No valid address found for host %s", destinationHost);
     }
 
     const struct sockaddr_in destinationAddress = *(struct sockaddr_in *)res->ai_addr;
@@ -130,8 +124,7 @@ uint32_t calculate_checksum(void *buffer, uint16_t length) {
 
 void set_icmp_echo_fields(struct icmp* icmpHeader, const uint8_t timeToLive) {
     if (icmpHeader == NULL) {
-        handle_error("ICMP header pointer is NULL");
-        exit(EXIT_FAILURE);
+        handle_error(1, "ICMP header pointer is NULL");
     }
     memset(icmpHeader, 0, sizeof(*icmpHeader));
     icmpHeader->icmp_type = ICMP_ECHO;
@@ -144,7 +137,7 @@ void set_icmp_echo_fields(struct icmp* icmpHeader, const uint8_t timeToLive) {
 void print_hop_info(const struct Options *options, const uint8_t timeToLive, const double roundTripTime,
                     const struct sockaddr_in *replyAddress) {
     if (replyAddress == NULL) {
-        handle_error("Reply address is NULL");
+        handle_error(1, "Reply address is NULL");
         return;
     }
 
@@ -167,19 +160,19 @@ double calculate_round_trip_time(const struct timespec sendingTime, const struct
 int create_socket(const struct Options *options) {
     const int socketFileDescriptor = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (socketFileDescriptor == -1) {
-        handle_error("Socket creation failed");
+        handle_error(1, "Socket creation failed");
     }
 
     if (options->interface != NULL &&
         setsockopt(socketFileDescriptor, SOL_SOCKET, SO_BINDTODEVICE, options->interface,
                     sizeof(options->interface)) == -1) {
-        handle_error("Failed to bind socket to interface '%s'", options->interface);
+        handle_error(1, "Failed to bind socket to interface '%s'", options->interface);
     }
 
     return socketFileDescriptor;
 }
 
-void handle_error(const char *message, ...) {
+void handle_error(const uint8_t exitFlag, const char *message, ...) {
     char errorMessage[ERROR_MESSAGE_SIZE];
     strcpy(errorMessage, "Error: ");
     strcat(errorMessage, message);
@@ -196,13 +189,15 @@ void handle_error(const char *message, ...) {
     vfprintf(stdout, errorMessage, arg);
     va_end(arg);
 
-    exit(EXIT_FAILURE);
+    if (exitFlag) {
+        exit(EXIT_FAILURE);
+    }
 }
 
 void set_socket_ttl(const int socketFileDescriptor, const uint8_t timeToLive) {
     if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_TTL, &timeToLive,
                 sizeof(timeToLive)) == -1) {
-        handle_error("Failed to set TTL (setsockopt)");
+        handle_error(1, "Failed to set TTL (setsockopt)");
     }
 }
 
@@ -210,7 +205,7 @@ void send_icmp_packet(const int socketFileDescriptor, const struct icmp *icmpHea
                       const struct sockaddr_in *destinationAddress, const uint8_t timeToLive) {
     if (sendto(socketFileDescriptor, icmpHeader, sizeof(*icmpHeader), 0,
                 (struct sockaddr *)destinationAddress, sizeof(*destinationAddress)) == -1) {
-        handle_error("Packet send failed (sendto). Destination: %s, TTL: %d",
+        handle_error(1, "Packet send failed (sendto). Destination: %s, TTL: %d",
                       inet_ntoa(destinationAddress->sin_addr), timeToLive);
     }
 }
@@ -219,20 +214,20 @@ void receive_icmp_packet(const int socketFileDescriptor, char *packet, struct so
     socklen_t addrLen = sizeof(*replyAddr);
     if (recvfrom(socketFileDescriptor, packet, PACKET_SIZE, 0, (struct sockaddr *)replyAddr,
                   &addrLen) == -1) {
-        handle_error("Packet receive failed (recvfrom)");
+        handle_error(1, "Packet receive failed (recvfrom)");
     }
 }
 
 uint8_t is_valid_icmp_reply(const char *packet) {
     const struct ip *ipHeader = (const struct ip *)packet;
     if (ipHeader->ip_p != IPPROTO_ICMP) {
-        handle_error("Unexpected protocol %d. Expected ICMP.", ipHeader->ip_p);
+        handle_error(0, "Unexpected protocol %d. Expected ICMP.", ipHeader->ip_p);
         return 0;
     }
 
     const struct icmp *icmpReply = (const struct icmp *)(packet + (ipHeader->ip_hl << 2));
-    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-        handle_error("Unexpected ICMP type %d", icmpReply->icmp_type);
+    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED && icmpReply->icmp_type != ICMP_DEST_UNREACH) {
+        handle_error(0, "Unexpected ICMP type %d", icmpReply->icmp_type);
         return 0;
     }
 

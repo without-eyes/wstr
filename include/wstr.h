@@ -117,10 +117,13 @@ int create_socket(const struct Options *options);
 /**
     * Handles errors by printing a message and exiting the program.
     *
+    * @param exitFlag If 1, the function exits the program; if 0, it
+    * only prints the error.
     * @param[in] message The error message format string (like printf).
-    * @param[in] ... Additional arguments corresponding to the format specifiers in message.
+    * @param[in] ... Additional arguments corresponding to the format
+    * specifiers in message.
 */
-void handle_error(const char *message, ...);
+void handle_error(uint8_t exitFlag, const char *message, ...);
 
 /**
     * Sets the Time To Live option on the socket.
