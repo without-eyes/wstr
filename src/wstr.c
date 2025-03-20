@@ -81,7 +81,7 @@ struct Options parse_arguments(const uint8_t argc, char *argv[]) {
             break;
 
         case 'h': // help
-            printf("Usage: sudo wstr [-d] [-i name] [-t number] destination\n");
+            printf("Usage: sudo wstr [-d] [-i interface] [-t ttl] [-o timeout] destination\n");
             printf("  -d, --domain      Turn on displaying FQDN\n");
             printf("  -i, --interface   Set network interface\n");
             printf("  -t, --ttl         Set TTL(0-255) for network packets\n");
