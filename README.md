@@ -1,7 +1,7 @@
 # WSTR - Without eyeS's Traceroute
 
 ## Overview
-`wstr` is a network diagnostic utility designed to analyze and troubleshoot network connections.
+`wstr` is a network utility that traces the route from your computer to a given address by sending ICMP packets.
 
 ## Installation
 ### Requirements
