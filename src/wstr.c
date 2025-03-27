@@ -256,6 +256,11 @@ uint8_t is_valid_icmp_reply(const char *packet) {
         handle_error(0, "Unexpected protocol %d. Expected ICMP.", ipHeader->ip_p);
         return 0;
     }
+
+    if (ipHeader->ip_src.s_addr == htonl(INADDR_LOOPBACK)) {
+        return 0;
+    }
+
     return 1;
 }
 
