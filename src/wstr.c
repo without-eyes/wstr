@@ -256,13 +256,6 @@ uint8_t is_valid_icmp_reply(const char *packet) {
         handle_error(0, "Unexpected protocol %d. Expected ICMP.", ipHeader->ip_p);
         return 0;
     }
-
-        const struct icmp *icmpReply = (const struct icmp *)(packet + (ipHeader->ip_hl << 2));
-    if (icmpReply->icmp_type != ICMP_ECHOREPLY && icmpReply->icmp_type != ICMP_TIME_EXCEEDED) {
-        handle_error(0, "Unexpected ICMP type %d", icmpReply->icmp_type);
-        return 0;
-    }
-
     return 1;
 }
 
