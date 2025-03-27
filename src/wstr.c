@@ -267,15 +267,11 @@ void print_hop_info(const struct Options *options, const uint8_t timeToLive, con
     }
 
     char domainName[DOMAIN_NAME_SIZE];
-
-    if (options->fqdnFlag != 1) {
-        printf("%2d  %7.3lfms   %-15s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
-        return;
-    }
-
     const int result = getnameinfo((struct sockaddr*)replyAddress, sizeof(*replyAddress), domainName,
                                     sizeof(domainName), NULL, 0, NI_NAMEREQD);
-    if (result != 0) {
+    if (options->fqdnFlag != 1 || result != 0) {
+        printf("%2d  %7.3lfms   %-15s\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr));
+    } else {
         printf("%2d  %7.3lfms   %-15s (%s)\n", timeToLive, roundTripTime, inet_ntoa(replyAddress->sin_addr),
                                                     domainName);
     }
