@@ -191,15 +191,15 @@ int create_socket(const struct Options *options) {
 
 void handle_error(const uint8_t exitFlag, const char *message, ...) {
     char errorMessage[ERROR_MESSAGE_SIZE];
-    strcpy(errorMessage, "Error: ");
-    strcat(errorMessage, message);
+    strncpy(errorMessage, "Error: ", ERROR_MESSAGE_SIZE - 1);
+    strncat(errorMessage, message, ERROR_MESSAGE_SIZE - strlen(errorMessage) - 1);
 
     const char* strerrorResult = strerror(errno);
     if (strcmp(strerrorResult, "Success") != 0) {
-        strcat(errorMessage, ". Reason: ");
-        strcat(errorMessage, strerrorResult);
+        strncat(errorMessage, ". Reason: ", ERROR_MESSAGE_SIZE - strlen(errorMessage) - 1);
+        strncat(errorMessage, strerrorResult, ERROR_MESSAGE_SIZE - strlen(errorMessage) - 1);
     }
-    strcat(errorMessage, "\n");
+    strncat(errorMessage, "\n", ERROR_MESSAGE_SIZE - strlen(errorMessage) - 1);
 
     va_list arg;
     va_start(arg, message);
