@@ -21,6 +21,17 @@ struct Options {
 };
 
 /**
+    * Performs a traceroute to the specified destination host.
+    *
+    * @param[in] options The options of wstr passed as arguments
+    * to program.
+    *
+    * @note This function requires raw socket privileges, so
+    * it need to be executed with root permissions.
+*/
+void wstr(const struct Options* options);
+
+/**
     * Processes the command-line arguments passed to the program.
     *
     * @param[in] argc The number of arguments passed to the program
@@ -45,6 +56,31 @@ struct Options {
 struct Options parse_arguments(uint8_t argc, char *argv[]);
 
 /**
+    * Handles errors by printing a message and exiting the program.
+    *
+    * @param exitFlag If 1, the function exits the program; if 0, it
+    * only prints the error.
+    * @param[in] message The error message format string (like printf).
+    * @param[in] ... Additional arguments corresponding to the format
+    * specifiers in message.
+*/
+void handle_error(uint8_t exitFlag, const char *message, ...);
+
+/**
+    * Creates a socket file descriptor and binds it to an interface
+    * if specified.
+    *
+    * @param[in] options The options of wstr passed as arguments
+    * to the program.
+    *
+    * @return The socket file descriptor.
+    *
+    * @note This function requires raw socket privileges,
+    * so it must be executed with root permissions.
+*/
+int create_socket(const struct Options *options);
+
+/**
     * Resolves the given hostname to an IP address.
     *
     * @param[in] destinationHost The hostname to resolve.
@@ -53,16 +89,6 @@ struct Options parse_arguments(uint8_t argc, char *argv[]);
     * the resolved IP address.
 */
 struct sockaddr_in resolve_host(const char *destinationHost);
-
-/**
-    * Computes the Internet checksum for a given buffer.
-    *
-    * @param[in] buffer The pointer to data buffer.
-    * @param[in] length The length of the buffer in bytes.
-    *
-    * @return Returns computed cheksum.
-*/
-uint32_t calculate_checksum(void *buffer, uint16_t length);
 
 /**
     * Initializes an ICMP Echo Request packet.
@@ -74,17 +100,60 @@ uint32_t calculate_checksum(void *buffer, uint16_t length);
 void set_icmp_echo_fields(struct icmp* icmpHeader, uint8_t timeToLive);
 
 /**
-    * Calculates the round trip time (RTT) between sending and
-    * receiving an ICMP Echo Request packet.
+    * Computes the Internet checksum for a given buffer.
     *
-    * @param[in] sendingTime The timestamp when the ICMP packet
-    * was sent.
-    * @param[in] receivingTime The timestamp when the ICMP Echo
-    * Reply was received.
+    * @param[in] buffer The pointer to data buffer.
+    * @param[in] length The length of the buffer in bytes.
     *
-    * @return The round-trip time in milliseconds.
+    * @return Returns computed cheksum.
 */
-double calculate_round_trip_time(struct timespec sendingTime, struct timespec receivingTime);
+uint16_t calculate_checksum(void *buffer, uint16_t length);
+
+/**
+    * Sets the Time To Live option on the socket.
+    *
+    * @param[in] socketFileDescriptor The socket file descriptor.
+    * @param[in] timeToLive The Time To Live value to set.
+*/
+void set_socket_ttl(int socketFileDescriptor, uint8_t timeToLive);
+
+/**
+    * Sets the timeout value for the socket.
+    *
+    * @param[in] options The options of wstr passed as arguments
+    * to program.
+    * @param[in] socketFileDescriptor The socket file descriptor..
+*/
+void set_socket_timeout(const struct Options* options, int socketFileDescriptor);
+
+/**
+    * Sends an ICMP packet to the specified destination address.
+    *
+    * @param[in] socketFileDescriptor The socket file descriptor.
+    * @param[in] icmpHeader Pointer to the ICMP header to send.
+    * @param[in] destinationAddress Pointer to the destination address structure.
+    * @param[in] timeToLive The Time To Live value.
+*/
+void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader,
+                      const struct sockaddr_in *destinationAddress, uint8_t timeToLive);
+
+/**
+    * Receive an ICMP packet from the socket.
+    *
+    * @param[in] socketFileDescriptor The socket file descriptor.
+    * @param[out] packet Buffer to store the received packet.
+    * @param[out] replyAddress Pointer to store the sender's address.
+*/
+void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr_in *replyAddress);
+
+/**
+    * Checks if an ICMP packet is valid.
+    *
+    * @param[in] packet The received packet.
+    *
+    * @return Returns 1 if true, 0 if false.
+*/
+uint8_t is_valid_icmp_reply(const char *packet);
 
 /**
     * Prints the hop information during a traceroute operation.
@@ -103,85 +172,16 @@ void print_hop_info(const struct Options *options, uint8_t timeToLive, double ro
                     const struct sockaddr_in *replyAddress);
 
 /**
-    * Creates a socket file descriptor and binds it to an interface
-    * if specified.
+    * Calculates the round trip time (RTT) between sending and
+    * receiving an ICMP Echo Request packet.
     *
-    * @param[in] options The options of wstr passed as arguments
-    * to the program.
+    * @param[in] sendingTime The timestamp when the ICMP packet
+    * was sent.
+    * @param[in] receivingTime The timestamp when the ICMP Echo
+    * Reply was received.
     *
-    * @return The socket file descriptor.
-    *
-    * @note This function requires raw socket privileges,
-    * so it must be executed with root permissions.
+    * @return The round-trip time in milliseconds.
 */
-int create_socket(const struct Options *options);
-
-/**
-    * Handles errors by printing a message and exiting the program.
-    *
-    * @param exitFlag If 1, the function exits the program; if 0, it
-    * only prints the error.
-    * @param[in] message The error message format string (like printf).
-    * @param[in] ... Additional arguments corresponding to the format
-    * specifiers in message.
-*/
-void handle_error(uint8_t exitFlag, const char *message, ...);
-
-/**
-    * Sets the Time To Live option on the socket.
-    *
-    * @param[in] socketFileDescriptor The socket file descriptor.
-    * @param[in] timeToLive The Time To Live value to set.
-*/
-void set_socket_ttl(int socketFileDescriptor, uint8_t timeToLive);
-
-/**
-    * Sends an ICMP packet to the specified destination address.
-    *
-    * @param[in] socketFileDescriptor The socket file descriptor.
-    * @param[in] icmpHeader Pointer to the ICMP header to send.
-    * @param[in] destinationAddress Pointer to the destination address structure.
-    * @param[in] timeToLive The Time To Live value.
-*/
-void send_icmp_packet(int socketFileDescriptor, const struct icmp *icmpHeader,
-                      const struct sockaddr_in *destinationAddress, uint8_t timeToLive);
-
-/**
-    * Receive an ICMP packet from the socket.
-    *
-    * @param[in] socketFileDescriptor The socket file descriptor.
-    * @param[out] packet Buffer to store the received packet.
-    * @param[out] replyAddr Pointer to store the sender's address.
-*/
-void receive_icmp_packet(int socketFileDescriptor, char *packet, struct sockaddr_in *replyAddr);
-
-/**
-    * Checks if an ICMP packet is valid.
-    *
-    * @param[in] packet The received packet.
-    *
-    * @return Returns 1 if true, 0 if false.
-*/
-uint8_t is_valid_icmp_reply(const char *packet);
-
-/**
-    * Sets the timeout value for the socket.
-    *
-    * @param[in] options The options of wstr passed as arguments
-    * to program.
-    * @param[in] socketFileDescriptor The socket file descriptor..
-*/
-void set_socket_timeout(const struct Options* options, int socketFileDescriptor);
-
-/**
-    * Performs a traceroute to the specified destination host.
-    *
-    * @param[in] options The options of wstr passed as arguments
-    * to program.
-    *
-    * @note This function requires raw socket privileges, so
-    * it need to be executed with root permissions.
-*/
-void wstr(const struct Options* options);
+double calculate_round_trip_time(struct timespec sendingTime, struct timespec receivingTime);
 
 #endif //WSTR_H
